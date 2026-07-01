@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DSA Visualizer — Interactive Data Structures & Algorithms</title>
+  <meta name="description" content="A modular, dependency-free collection of interactive data structure and algorithm visualizations, built with plain HTML, CSS and JavaScript." />
+  <link rel="stylesheet" href="styles/main.css" />
+  <link rel="icon" href="icon.svg" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="theme-color" content="#0f1220" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="DSA Viz" />
+</head>
+<body>
+  <div class="app">
+    <nav class="sidebar" id="sidebar"></nav>
+    <main class="main" id="main"></main>
+  </div>
+
+  <!-- Core (order matters) -->
+  <script src="core/dom.js"></script>
+  <script src="core/util.js"></script>
+  <script src="core/player.js"></script>
+  <script src="core/scaffold.js"></script>
+  <script src="core/registry.js"></script>
+  <script src="core/share.js"></script>
+
+  <!-- Visualization modules — each self-registers. Add new ones here. -->
+  <script src="visualizations/sorting.js"></script>
+  <script src="visualizations/sort-race.js"></script>
+  <script src="visualizations/searching.js"></script>
+  <script src="visualizations/stack-queue.js"></script>
+  <script src="visualizations/linked-list.js"></script>
+  <script src="visualizations/bst.js"></script>
+  <script src="visualizations/avl.js"></script>
+  <script src="visualizations/trie.js"></script>
+  <script src="visualizations/heap.js"></script>
+  <script src="visualizations/hash-table.js"></script>
+  <script src="visualizations/graph-traversal.js"></script>
+  <script src="visualizations/dijkstra.js"></script>
+  <script src="visualizations/union-find.js"></script>
+  <script src="visualizations/graph-builder.js"></script>
+  <script src="visualizations/pathfinding.js"></script>
+  <script src="visualizations/path-race.js"></script>
+  <script src="visualizations/recursion.js"></script>
+  <script src="visualizations/dp-lcs.js"></script>
+  <script src="visualizations/knapsack.js"></script>
+  <script src="visualizations/edit-distance.js"></script>
+
+  <!-- Lessons reference the visualizations above, so load them after -->
+  <script src="core/lessons.js"></script>
+
+  <!-- App bootstraps last -->
+  <script src="core/app.js"></script>
+
+  <!-- PWA: register service worker for offline use (no-op on file://) -->
+  <script>
+    if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('sw.js').catch(function () {});
+      });
+    }
+  </script>
+</body>
+</html>
