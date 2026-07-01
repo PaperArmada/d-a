@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DSA Visualizer — Interactive Data Structures & Algorithms</title>
+  <meta name="description" content="A modular, dependency-free collection of interactive data structure and algorithm visualizations, built with plain HTML, CSS and JavaScript." />
+  <link rel="stylesheet" href="styles/main.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='13'>🧮</text></svg>" />
+</head>
+<body>
+  <div class="app">
+    <nav class="sidebar" id="sidebar"></nav>
+    <main class="main" id="main"></main>
+  </div>
+
+  <!-- Core (order matters) -->
+  <script src="core/dom.js"></script>
+  <script src="core/util.js"></script>
+  <script src="core/player.js"></script>
+  <script src="core/scaffold.js"></script>
+  <script src="core/registry.js"></script>
+
+  <!-- Visualization modules — each self-registers. Add new ones here. -->
+  <script src="visualizations/sorting.js"></script>
+  <script src="visualizations/searching.js"></script>
+  <script src="visualizations/stack-queue.js"></script>
+  <script src="visualizations/linked-list.js"></script>
+  <script src="visualizations/bst.js"></script>
+  <script src="visualizations/heap.js"></script>
+  <script src="visualizations/hash-table.js"></script>
+  <script src="visualizations/graph-traversal.js"></script>
+  <script src="visualizations/pathfinding.js"></script>
+  <script src="visualizations/recursion.js"></script>
+  <script src="visualizations/dp-lcs.js"></script>
+
+  <!-- App bootstraps last -->
+  <script src="core/app.js"></script>
+</body>
+</html>
