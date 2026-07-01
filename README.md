@@ -15,28 +15,42 @@ xdg-open index.html        # Linux
 python3 -m http.server 8000   # then visit http://localhost:8000
 ```
 
-## What's included (27 visualizations)
+## Hosting
+
+It's a static site, so any static host works. This repo ships a GitHub Pages workflow
+(`.github/workflows/deploy.yml`): enable **Settings → Pages → Source: GitHub Actions**, and every
+push to `main` runs the tests and publishes to `https://<user>.github.io/<repo>/`. Cloudflare
+Pages / Netlify / Vercel work too — point them at the repo, no build command, output = repo root.
+
+**Live demo:** https://paperarmada.github.io/d-a/ · installable (PWA) and works offline.
+
+## What's included (29 visualizations + 4 guided lessons)
 
 | Category | Visualizations |
 | --- | --- |
+| **Lessons** | Guided tours that sequence visualizations with prose: Sorting, Graphs, Trees, Dynamic Programming |
 | **Sorting** | Bubble, Selection, Insertion, Merge, Quick, Heap, **Sorting Race** (all six side-by-side) |
 | **Searching** | Linear, Binary |
 | **Data Structures** | Stack (LIFO), Queue (FIFO), Linked List, **Trie** |
 | **Trees** | Binary Search Tree (+ in/pre/post-order & BFS traversals), **AVL Tree** (self-balancing with LL/LR/RL/RR rotations) |
 | **Heaps** | Binary Min-Heap (sift-up / sift-down, tree + array views) |
 | **Hashing** | Hash Table (separate chaining, live load factor) |
-| **Graphs** | BFS, DFS, **Dijkstra** (weighted shortest paths), **Union-Find** (DSU with path compression), Pathfinding grid (BFS / Dijkstra / A*) |
+| **Graphs** | BFS, DFS, **Dijkstra** (weighted shortest paths), **Union-Find** (DSU with path compression), **Build-Your-Own Graph** editor, Pathfinding grid (BFS / Dijkstra / A*), **Pathfinding Race** (A* vs Dijkstra vs BFS) |
 | **Recursion & DP** | Tower of Hanoi, Fibonacci recursion tree (naive vs. memoized), Longest Common Subsequence, **0/1 Knapsack**, **Edit Distance** |
 
 ### Features
 
-- **Synced pseudocode** — the executing line is highlighted as the animation plays (sorting, searching, traversals, AVL, Dijkstra, DP tables).
+- **Guided lessons** — step-by-step tours with prose and a live embedded visualization per step.
+- **Synced pseudocode** — the executing line is highlighted as the animation plays.
 - **Live operation counters** — comparisons / swaps / nodes settled, updated per step.
 - **Full playback** — play/pause, step forward & back, speed control, reset.
 - **Keyboard shortcuts** — `Space` play/pause, `←`/`→` step, `Home` reset, `/` focus search.
-- **Deep links** — sorting/searching/edit-distance expose a *Copy link* that encodes the exact input in the URL.
+- **Deep links everywhere** — a *Copy link* button encodes the exact state (arrays, trees, heaps, graphs, strings…) in the URL.
+- **Build-your-own graph** — draw nodes/edges, then run BFS/DFS/Dijkstra on it.
+- **Touch & mobile** — pointer-based grid drawing, responsive layout, slide-in sidebar.
+- **Embeddable** — `?embed=1` (or `#/id?embed=1`) hides the chrome for `<iframe>` embedding.
+- **PWA** — installable and fully offline via a service worker.
 - **Light & dark themes** (persisted) and `prefers-reduced-motion` support.
-- **Custom inputs** — randomize, resize, draw grid walls, type strings, etc.
 
 ## Architecture
 
@@ -52,12 +66,15 @@ core/
   player.js                # Player: drives an array of "frames" (play/pause/step/seek/speed)
   scaffold.js              # createStepViz(): controls + status + pseudocode + counters, wired to Player
   registry.js              # visualizations register themselves; provides grouped catalog
-  app.js                   # sidebar, search, hash routing (#/id?params), theme, mount/unmount
+  share.js                 # Copy-link helper for deep-linkable state
+  lessons.js               # guided tours that embed visualizations with prose
+  app.js                   # sidebar, search, hash routing (#/id?params), theme, embed, mobile
 visualizations/
   sorting.js  sort-race.js  searching.js  stack-queue.js  linked-list.js
   bst.js  avl.js  trie.js  heap.js  hash-table.js
-  graph-traversal.js  dijkstra.js  union-find.js  pathfinding.js
-  recursion.js  dp-lcs.js  knapsack.js  edit-distance.js
+  graph-traversal.js  dijkstra.js  union-find.js  graph-builder.js
+  pathfinding.js  path-race.js  recursion.js  dp-lcs.js  knapsack.js  edit-distance.js
+manifest.webmanifest  sw.js  icon.svg   # PWA: installable + offline
 test/
   smoke.test.js            # headless-browser smoke + algorithm-correctness tests
 ```
