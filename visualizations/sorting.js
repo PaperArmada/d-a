@@ -10,25 +10,35 @@
   const Util = window.Util;
 
   // ---- Frame renderer (bars) ----
+  // Reuse bar elements across frames so CSS transitions animate the height /
+  // colour changes smoothly instead of snapping on a full rebuild.
   function renderBars(stage, frame) {
-    clear(stage);
     if (!frame) return;
-    const wrap = el('div.bars');
+    const n = frame.array.length;
     const max = Math.max.apply(null, frame.array.concat([1]));
+    const showLabels = n <= 25;
+    let wrap = stage.querySelector('.bars');
+    if (!wrap || wrap.childElementCount !== n) {
+      clear(stage);
+      wrap = el('div.bars');
+      for (let i = 0; i < n; i++) wrap.appendChild(el('div.bar', showLabels ? [el('div.bar__label')] : []));
+      stage.appendChild(wrap);
+    }
     const sorted = new Set(frame.sorted || []);
     const compare = new Set(frame.compare || []);
     const swap = new Set(frame.swap || []);
-    frame.array.forEach(function (v, i) {
-      const bar = el('div.bar', { style: { height: (v / max * 100) + '%' } },
-        frame.array.length <= 25 ? [el('div.bar__label', String(v))] : []);
-      if (sorted.has(i)) bar.classList.add('is-sorted');
-      if (i === frame.pivot) bar.classList.add('is-pivot');
-      if (i === frame.cursor) bar.classList.add('is-cursor');
-      if (compare.has(i)) bar.classList.add('is-compare');
-      if (swap.has(i)) bar.classList.add('is-swap');
-      wrap.appendChild(bar);
-    });
-    stage.appendChild(wrap);
+    const bars = wrap.children;
+    for (let i = 0; i < n; i++) {
+      const bar = bars[i];
+      bar.style.height = (frame.array[i] / max * 100) + '%';
+      bar.className = 'bar' +
+        (sorted.has(i) ? ' is-sorted' : '') +
+        (i === frame.pivot ? ' is-pivot' : '') +
+        (i === frame.cursor ? ' is-cursor' : '') +
+        (compare.has(i) ? ' is-compare' : '') +
+        (swap.has(i) ? ' is-swap' : '');
+      if (showLabels) { const lbl = bar.firstChild; if (lbl) lbl.textContent = String(frame.array[i]); }
+    }
   }
 
   function allIdx(n) { const r = []; for (let i = 0; i < n; i++) r.push(i); return r; }

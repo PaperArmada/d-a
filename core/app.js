@@ -79,7 +79,7 @@
     clear(sidebar);
     navItems = [];
     sidebar.appendChild(el('div.sidebar__brand', [
-      el('h1', 'DSA'), el('span', 'Visualizer'),
+      el('h1.brand-mark', 'DSA'), el('span', 'Visualizer'),
       el('span.spacer'),
       el('button.icon-btn#theme-btn', {
         title: 'Toggle light / dark theme', 'aria-label': 'Toggle theme', onclick: toggleTheme

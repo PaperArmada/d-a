@@ -4,19 +4,27 @@
   const { el, clear } = window.DOM;
   const Util = window.Util;
 
+  // Reuse cell elements across frames for smooth highlight transitions.
   function renderCells(stage, frame) {
-    clear(stage);
     if (!frame) return;
-    const wrap = el('div.cells');
-    frame.array.forEach(function (v, i) {
-      const cell = el('div.cell', [el('div.cell__idx', String(i)), String(v)]);
-      if (frame.lo != null && frame.hi != null && (i < frame.lo || i > frame.hi)) cell.classList.add('is-ghost');
-      if (i === frame.active) cell.classList.add('is-active');
-      if (i === frame.hit) cell.classList.add('is-hit');
-      wrap.appendChild(cell);
-    });
-    stage.appendChild(wrap);
-    if (frame.target != null) stage.appendChild(el('p.hint', 'Searching for target = ' + frame.target));
+    const n = frame.array.length;
+    let wrap = stage.querySelector('.cells');
+    let hint = stage.querySelector('.hint');
+    if (!wrap || wrap.childElementCount !== n) {
+      clear(stage);
+      wrap = el('div.cells');
+      for (let i = 0; i < n; i++) wrap.appendChild(el('div.cell', [el('div.cell__idx', String(i)), el('span.cell__val')]));
+      stage.appendChild(wrap);
+      hint = el('p.hint'); stage.appendChild(hint);
+    }
+    const cells = wrap.children;
+    for (let i = 0; i < n; i++) {
+      const cell = cells[i];
+      cell.lastChild.textContent = String(frame.array[i]);
+      const ghost = frame.lo != null && frame.hi != null && (i < frame.lo || i > frame.hi);
+      cell.className = 'cell' + (ghost ? ' is-ghost' : '') + (i === frame.active ? ' is-active' : '') + (i === frame.hit ? ' is-hit' : '');
+    }
+    if (hint) hint.textContent = frame.target != null ? 'Searching for target = ' + frame.target : '';
   }
 
   const LINEAR_PC = [
