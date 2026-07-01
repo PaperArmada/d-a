@@ -1,11 +1,12 @@
 name: Deploy to GitHub Pages
 
 # Publishes the static site to GitHub Pages after tests pass.
-# Runs on pushes to main (production) and to the working branch (so you can
-# preview before merging). Once merged you can drop the branch line.
+# Only runs on main: the github-pages environment is restricted to the default
+# branch, so deploys from any other branch would fail at the environment gate.
+# (CI — .github/workflows/ci.yml — still runs the tests on branches and PRs.)
 on:
   push:
-    branches: [main, "claude/dsa-interactive-visualizations-ob12af"]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
