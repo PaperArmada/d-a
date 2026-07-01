@@ -12,14 +12,44 @@
     sidebar = document.getElementById('sidebar');
     main = document.getElementById('main');
     applyStoredTheme();
+    if (isEmbed()) document.body.classList.add('embed');
     buildSidebar('');
+    buildMobileChrome();
+    sidebar.addEventListener('click', function (e) { if (e.target.closest('.nav-item')) closeSidebar(); });
+    if (isEmbed()) {
+      const full = el('a.embed-badge', { href: fullLink(), target: '_blank', rel: 'noopener' }, 'Open in DSA Visualizer ↗');
+      document.body.appendChild(full);
+    }
     window.addEventListener('hashchange', route);
     window.addEventListener('keydown', function (e) {
       if (e.key === '/' && document.activeElement && document.activeElement.tagName !== 'INPUT') {
         const s = document.querySelector('.search'); if (s) { e.preventDefault(); s.focus(); }
       }
+      if (e.key === 'Escape') closeSidebar();
     });
     route();
+  }
+
+  function isEmbed() {
+    return /(?:^|[?&])embed=1(?:&|$)/.test(location.search) || parseHash().params.embed === '1';
+  }
+
+  // ---- Mobile drawer -----------------------------------------------------
+  let overlay, menuBtn;
+  function buildMobileChrome() {
+    if (isEmbed()) return;
+    menuBtn = el('button.mobile-menu-btn', { 'aria-label': 'Open menu', onclick: openSidebar }, '☰');
+    overlay = el('div.sidebar-overlay', { onclick: closeSidebar });
+    document.body.appendChild(menuBtn);
+    document.body.appendChild(overlay);
+  }
+  function openSidebar() { sidebar.classList.add('open'); if (overlay) overlay.classList.add('show'); }
+  function closeSidebar() { sidebar.classList.remove('open'); if (overlay) overlay.classList.remove('show'); }
+
+  function fullLink() {
+    const { id, params } = parseHash();
+    const p = Object.assign({}, params); delete p.embed;
+    return location.origin + location.pathname + (id ? buildLink(id, p) : '#/');
   }
 
   // ---- Theme -------------------------------------------------------------

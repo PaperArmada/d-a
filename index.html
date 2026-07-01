@@ -6,7 +6,11 @@
   <title>DSA Visualizer — Interactive Data Structures & Algorithms</title>
   <meta name="description" content="A modular, dependency-free collection of interactive data structure and algorithm visualizations, built with plain HTML, CSS and JavaScript." />
   <link rel="stylesheet" href="styles/main.css" />
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='13'>🧮</text></svg>" />
+  <link rel="icon" href="icon.svg" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="theme-color" content="#0f1220" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="DSA Viz" />
 </head>
 <body>
   <div class="app">
@@ -43,5 +47,14 @@
 
   <!-- App bootstraps last -->
   <script src="core/app.js"></script>
+
+  <!-- PWA: register service worker for offline use (no-op on file://) -->
+  <script>
+    if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('sw.js').catch(function () {});
+      });
+    }
+  </script>
 </body>
 </html>

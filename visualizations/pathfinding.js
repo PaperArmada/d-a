@@ -26,18 +26,37 @@
 
       const status = el('div.status', { html: '&nbsp;' });
       const stage = el('div.stage', { style: { minHeight: '0', display: 'flex', justifyContent: 'center' } });
-      const grid = el('div.grid', { style: { gridTemplateColumns: 'repeat(' + COLS + ', 24px)' } });
+      const grid = el('div.grid', { style: { gridTemplateColumns: 'repeat(' + COLS + ', 24px)', touchAction: 'none' } });
       const cellEls = [];
       function setStatus(h) { status.innerHTML = h; }
 
       for (let i = 0; i < ROWS * COLS; i++) {
         const c = el('div.grid-cell', { dataset: { i: i } });
-        c.addEventListener('mousedown', function (e) { e.preventDefault(); onDown(i); });
-        c.addEventListener('mouseenter', function () { if (drag) onEnter(i); });
         cellEls.push(c);
         grid.appendChild(c);
       }
-      window.addEventListener('mouseup', function () { drag = null; });
+      // Pointer events unify mouse + touch + pen. During a drag we resolve the
+      // cell under the pointer via elementFromPoint so touch-drag works too.
+      grid.addEventListener('pointerdown', function (e) {
+        const i = cellIndexFrom(e.target);
+        if (i < 0) return;
+        e.preventDefault();
+        if (e.pointerId != null && grid.setPointerCapture) { try { grid.releasePointerCapture(e.pointerId); } catch (_) {} }
+        onDown(i);
+      });
+      grid.addEventListener('pointermove', function (e) {
+        if (!drag) return;
+        e.preventDefault();
+        const el2 = document.elementFromPoint(e.clientX, e.clientY);
+        const i = cellIndexFrom(el2);
+        if (i >= 0) onEnter(i);
+      });
+      window.addEventListener('pointerup', function () { drag = null; });
+      window.addEventListener('pointercancel', function () { drag = null; });
+      function cellIndexFrom(node) {
+        if (!node || !node.dataset || node.dataset.i == null) return -1;
+        return parseInt(node.dataset.i, 10);
+      }
       stage.appendChild(grid);
 
       function onDown(i) {
