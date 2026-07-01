@@ -15,21 +15,28 @@ xdg-open index.html        # Linux
 python3 -m http.server 8000   # then visit http://localhost:8000
 ```
 
-## What's included (20 visualizations)
+## What's included (27 visualizations)
 
 | Category | Visualizations |
 | --- | --- |
-| **Sorting** | Bubble, Selection, Insertion, Merge, Quick, Heap |
+| **Sorting** | Bubble, Selection, Insertion, Merge, Quick, Heap, **Sorting Race** (all six side-by-side) |
 | **Searching** | Linear, Binary |
-| **Data Structures** | Stack (LIFO), Queue (FIFO), Linked List |
-| **Trees** | Binary Search Tree (insert / search / delete + in/pre/post-order & BFS traversals) |
+| **Data Structures** | Stack (LIFO), Queue (FIFO), Linked List, **Trie** |
+| **Trees** | Binary Search Tree (+ in/pre/post-order & BFS traversals), **AVL Tree** (self-balancing with LL/LR/RL/RR rotations) |
 | **Heaps** | Binary Min-Heap (sift-up / sift-down, tree + array views) |
 | **Hashing** | Hash Table (separate chaining, live load factor) |
-| **Graphs** | Breadth-First Search, Depth-First Search, Pathfinding grid (BFS / Dijkstra / A*) |
-| **Recursion & DP** | Tower of Hanoi, Fibonacci recursion tree (naive vs. memoized), Longest Common Subsequence |
+| **Graphs** | BFS, DFS, **Dijkstra** (weighted shortest paths), **Union-Find** (DSU with path compression), Pathfinding grid (BFS / Dijkstra / A*) |
+| **Recursion & DP** | Tower of Hanoi, Fibonacci recursion tree (naive vs. memoized), Longest Common Subsequence, **0/1 Knapsack**, **Edit Distance** |
 
-Each one supports stepping forward/back, play/pause, speed control, and custom inputs
-(randomize, resize, draw walls, type strings, etc.).
+### Features
+
+- **Synced pseudocode** — the executing line is highlighted as the animation plays (sorting, searching, traversals, AVL, Dijkstra, DP tables).
+- **Live operation counters** — comparisons / swaps / nodes settled, updated per step.
+- **Full playback** — play/pause, step forward & back, speed control, reset.
+- **Keyboard shortcuts** — `Space` play/pause, `←`/`→` step, `Home` reset, `/` focus search.
+- **Deep links** — sorting/searching/edit-distance expose a *Copy link* that encodes the exact input in the URL.
+- **Light & dark themes** (persisted) and `prefers-reduced-motion` support.
+- **Custom inputs** — randomize, resize, draw grid walls, type strings, etc.
 
 ## Architecture
 
@@ -43,24 +50,29 @@ core/
   dom.js                   # el() / svgEl() / clear() — tiny DOM builder, no framework
   util.js                  # random arrays, list parsing, small helpers
   player.js                # Player: drives an array of "frames" (play/pause/step/seek/speed)
-  scaffold.js              # createStepViz(): standard controls + status + stage, wired to Player
+  scaffold.js              # createStepViz(): controls + status + pseudocode + counters, wired to Player
   registry.js              # visualizations register themselves; provides grouped catalog
-  app.js                   # sidebar, search, hash routing, mount/unmount
+  app.js                   # sidebar, search, hash routing (#/id?params), theme, mount/unmount
 visualizations/
-  sorting.js  searching.js  stack-queue.js  linked-list.js  bst.js
-  heap.js  hash-table.js  graph-traversal.js  pathfinding.js
-  recursion.js  dp-lcs.js
+  sorting.js  sort-race.js  searching.js  stack-queue.js  linked-list.js
+  bst.js  avl.js  trie.js  heap.js  hash-table.js
+  graph-traversal.js  dijkstra.js  union-find.js  pathfinding.js
+  recursion.js  dp-lcs.js  knapsack.js  edit-distance.js
+test/
+  smoke.test.js            # headless-browser smoke + algorithm-correctness tests
 ```
 
 ### Two module styles
 
-1. **Frame-based** (algorithm animations: sorting, searching, traversals, Hanoi, Fibonacci, LCS).
-   The algorithm produces an array of *frame* snapshots; `Scaffold.createStepViz` renders them
-   with standard transport controls. You only supply `render(stage, frame)` and a frame generator.
+1. **Frame-based** (sorting, race, searching, traversals, AVL, Dijkstra, Hanoi, Fibonacci,
+   LCS, Knapsack, Edit Distance). The algorithm produces an array of *frame* snapshots;
+   `Scaffold.createStepViz` renders them with transport controls, synced pseudocode, and
+   counters. You supply `render(stage, frame)` and a frame generator; each frame may carry
+   `{ status, line, counters }`.
 
-2. **Interactive** (stack, queue, linked list, BST, heap, hash table, pathfinding).
-   These build their own buttons and animate operations directly with short `setTimeout` sequences,
-   because the user drives them (push/pop, insert/delete, draw walls).
+2. **Interactive** (stack, queue, linked list, BST, heap, hash table, trie, union-find,
+   pathfinding). These build their own buttons and animate operations directly with short
+   `setTimeout` sequences, because the user drives them (push/pop, insert/delete, draw walls).
 
 Both styles share the same CSS primitives and DOM helpers, so they look consistent.
 
@@ -99,8 +111,10 @@ and landing-page card are generated automatically from the registry.
 
 ## Testing
 
-A headless-browser smoke test loads every registered visualization and checks that it
-mounts without errors, renders, steps through frames, and survives clicking all controls.
+A headless-browser test loads every registered visualization and checks that it mounts
+without errors, renders, steps through frames, and survives clicking all controls. It also
+runs **algorithm-correctness checks** on the pure frame generators (every sort produces a
+sorted permutation of its input; searches hit present values and miss absent ones).
 
 ```bash
 npm install     # installs Playwright (only dependency, dev-only)
@@ -110,6 +124,9 @@ npm test        # runs test/smoke.test.js against index.html
 The app itself stays dependency-free — Playwright is a **dev-only** dependency used purely
 for the test. The harness auto-detects Chromium (`$CHROMIUM_PATH`, then a browser under
 `$PLAYWRIGHT_BROWSERS_PATH`, then Playwright's bundled build).
+
+**CI:** `.github/workflows/ci.yml` runs `npm test` (with a fresh Chromium) on every push and
+pull request, so new visualizations can't silently break the collection.
 
 ## Design notes
 
