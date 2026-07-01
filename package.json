@@ -2,6 +2,11 @@
   "name": "dsa-visualizer",
   "version": "1.0.0",
   "description": "Modular, dependency-free interactive data structure & algorithm visualizations.",
+  "homepage": "https://paperarmada.github.io/d-a/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/PaperArmada/d-a.git"
+  },
   "license": "MIT",
   "private": true,
   "scripts": {
