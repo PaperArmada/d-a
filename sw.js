@@ -1,5 +1,5 @@
 /* Service worker — cache-first for offline use. Bump CACHE on any asset change. */
-const CACHE = 'dsa-viz-v2';
+const CACHE = 'dsa-viz-v3';
 
 const ASSETS = [
   './',

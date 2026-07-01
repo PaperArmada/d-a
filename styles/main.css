@@ -249,9 +249,17 @@ input[type="number"] { width: 70px; }
   background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 85%, #fff 15%), var(--accent));
   border-radius: 4px 4px 0 0;
   position: relative;
-  transition: height .22s var(--ease), background .18s var(--ease), box-shadow .18s var(--ease);
+  transition: height .22s var(--ease), background .18s var(--ease),
+              box-shadow .18s var(--ease), transform .18s var(--ease-bounce);
   min-width: 4px;
   box-shadow: inset 0 -2px 6px rgba(0,0,0,.12);
+}
+/* Emphasise the action so learners can follow what's being compared / moved */
+.bar.is-compare { transform: translateY(-5px); }
+.bar.is-swap {
+  transform: translateY(-10px) scaleX(1.04);
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--danger) 55%, transparent);
+  z-index: 2;
 }
 .bar__label {
   position: absolute;
@@ -402,6 +410,26 @@ input[type="range"]::-moz-range-thumb { width: 14px; height: 14px; border-radius
 /* Cells pop slightly when they become active */
 .cell { transition: background .18s var(--ease), border-color .18s var(--ease), transform .18s var(--ease-bounce); }
 
+/* ---- Learning-focused motion ----
+   SVG diagrams are redrawn each frame, so a keyframe on the *current* element
+   replays every step — the eye is pulled to exactly what the algorithm is
+   touching right now (traversal current node, BST search node, Dijkstra
+   settle, AVL rotated node, relaxed edge). Only single "current" markers
+   animate; steady states (visited, settled) stay calm to avoid noise. */
+@keyframes node-pop { 0% { transform: scale(.72); } 60% { transform: scale(1.14); } 100% { transform: scale(1); } }
+@keyframes edge-flash { 0% { opacity: .25; } 100% { opacity: 1; } }
+
+.node-circle.is-active {
+  transform-box: fill-box; transform-origin: center;
+  animation: node-pop .34s var(--ease);
+}
+.edge-line.is-active { animation: edge-flash .32s var(--ease); }
+
+@media (prefers-reduced-motion: reduce) {
+  .bar.is-compare, .bar.is-swap { transform: none; }
+  .node-circle.is-active, .edge-line.is-active { animation: none !important; }
+}
+
 /* ---- Pseudocode panel ---- */
 .viz-main { display: flex; gap: 16px; align-items: flex-start; }
 .viz-main .stage { flex: 1 1 auto; min-width: 0; }
@@ -458,17 +486,41 @@ input[type="range"]::-moz-range-thumb { width: 14px; height: 14px; border-radius
 /* ---- Lessons ---- */
 .lesson-prose {
   background: var(--bg-soft); border: 1px solid var(--border); border-radius: var(--radius);
-  padding: 16px 20px; margin-bottom: 16px; max-width: 900px; line-height: 1.65;
+  padding: 18px 22px; margin-bottom: 16px; max-width: 900px; line-height: 1.7;
   box-shadow: var(--shadow-sm);
+  animation: fade-up .3s var(--ease) both;
 }
-.lesson-step-title { font-size: 17px; font-weight: 700; margin-bottom: 6px; color: #fff; }
+.lesson-step-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 10px; flex-wrap: wrap; }
+.lesson-step-num { font-family: var(--mono); font-size: 11px; letter-spacing: .5px; color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 15%, transparent); padding: 3px 8px; border-radius: 999px; white-space: nowrap; }
+.lesson-step-title { font-size: 19px; font-weight: 700; color: #fff; }
 body.light .lesson-step-title { color: var(--text); }
-.lesson-prose b { color: var(--accent-2); }
+.lesson-para { margin: 0 0 10px; }
+.lesson-para:last-of-type { margin-bottom: 4px; }
+.lesson-prose b { color: var(--text); font-weight: 600; }
+.lesson-prose i { color: var(--text-dim); }
+.lesson-points { margin: 4px 0 10px; padding-left: 20px; }
+.lesson-points li { margin: 3px 0; }
+
+.lesson-callout {
+  display: flex; gap: 10px; align-items: flex-start;
+  margin: 10px 0; padding: 10px 14px; border-radius: var(--radius-sm);
+  border-left: 3px solid var(--border); background: var(--panel);
+  font-size: 14px;
+}
+.lesson-callout__label { font-weight: 700; white-space: nowrap; font-size: 13px; }
+.lesson-callout.watch { border-left-color: var(--warn); background: color-mix(in srgb, var(--warn) 9%, var(--panel)); }
+.lesson-callout.watch .lesson-callout__label { color: var(--warn); }
+.lesson-callout.try   { border-left-color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, var(--panel)); }
+.lesson-callout.try .lesson-callout__label { color: var(--accent); }
+.lesson-callout.key   { border-left-color: var(--accent-2); background: color-mix(in srgb, var(--accent-2) 10%, var(--panel)); }
+.lesson-callout.key .lesson-callout__label { color: var(--accent-2); }
+
 .lesson-dots { display: flex; gap: 6px; align-items: center; }
 .lesson-dot { width: 11px; height: 11px; border-radius: 50%; border: 1px solid var(--border);
   background: var(--panel-2); cursor: pointer; padding: 0; transition: transform .1s var(--ease), background .15s; }
-.lesson-dot:hover { transform: scale(1.2); }
-.lesson-dot.active { background: var(--accent); border-color: var(--accent); }
+.lesson-dot:hover { transform: scale(1.25); }
+.lesson-dot.active { background: var(--accent); border-color: var(--accent); transform: scale(1.15); }
 .lesson-viz-label { font-size: 12px; color: var(--text-dim); margin-bottom: 8px; text-transform: uppercase; letter-spacing: .6px; }
 .lesson-viz { animation: fade-in .3s var(--ease) both; }
 

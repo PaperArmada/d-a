@@ -12,8 +12,10 @@
     blurb: 'Classic 2-D DP. Fill a table in O(m·n), then backtrack.',
     longDesc: 'The LCS of two strings is the longest subsequence appearing in both (not necessarily contiguous). ' +
       'We fill a table where dp[i][j] = LCS length of the first i and first j characters, then backtrack for the actual subsequence.',
-    create: function (container) {
-      let A = 'AGCAT', B = 'GAC';
+    create: function (container, params) {
+      const clean0 = (s) => (s || '').toUpperCase().replace(/[^A-Z]/g, '').slice(0, 9);
+      let A = (params && params.a && clean0(params.a)) || 'AGCAT';
+      let B = (params && params.b && clean0(params.b)) || 'GAC';
 
       const inA = el('input.field', { type: 'text', value: A, style: { width: '130px' }, maxlength: '9' });
       const inB = el('input.field', { type: 'text', value: B, style: { width: '130px' }, maxlength: '9' });
