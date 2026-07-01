@@ -13,6 +13,7 @@ const ASSETS = [
   './core/scaffold.js',
   './core/registry.js',
   './core/share.js',
+  './core/lessons.js',
   './core/app.js',
   './visualizations/sorting.js',
   './visualizations/sort-race.js',

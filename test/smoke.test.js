@@ -114,32 +114,24 @@ async function run() {
     });
     assert(rendered, `[${m.id}] nothing rendered`);
 
-    // Player step/reset for frame-based visualizations (those with a progress "n / m" label)
-    const hasPlayer = await page.evaluate(() => {
-      const p = [...document.querySelectorAll('.viz-host .controls .mono.dim')]
-        .find((e) => /\d+\s*\/\s*\d+/.test(e.textContent));
-      return !!p;
-    });
-    if (hasPlayer) {
-      const total = await page.evaluate(() => {
-        const p = [...document.querySelectorAll('.viz-host .controls .mono.dim')]
-          .find((e) => /\d+\s*\/\s*\d+/.test(e.textContent));
-        return p ? parseInt(p.textContent.split('/')[1], 10) : 0;
+    // Player step: click the Step-forward button and confirm the progress
+    // label *in its own .controls* advances. Scoping to the same controls
+    // avoids confusion on lesson pages, which show both a lesson step counter
+    // and the embedded visualization's own player.
+    const next = await page.$('.viz-host .btn[title="Step forward"]');
+    if (next) {
+      const readIdx = (b) => b.evaluate((btn) => {
+        const c = btn.closest('.controls');
+        const p = [...c.querySelectorAll('.mono.dim')].find((e) => /\d+\s*\/\s*\d+/.test(e.textContent));
+        return p ? { i: parseInt(p.textContent.split('/')[0], 10), n: parseInt(p.textContent.split('/')[1], 10) } : null;
       });
-      // Some viz start with a single frame (e.g. AVL waits for an insert); only
-      // assert advancement when there are multiple frames to step through.
-      if (total > 1) {
-        const next = await page.$('.viz-host .btn[title="Step forward"]');
-        if (next) {
-          await next.click().catch(() => {});
-          await page.waitForTimeout(60);
-          const idx = await page.evaluate(() => {
-            const p = [...document.querySelectorAll('.viz-host .controls .mono.dim')]
-              .find((e) => /\d+\s*\/\s*\d+/.test(e.textContent));
-            return p ? parseInt(p.textContent.split('/')[0], 10) : 0;
-          });
-          assert(idx >= 2, `[${m.id}] step forward did not advance (index ${idx})`);
-        }
+      const before = await readIdx(next);
+      // Some viz start with a single frame (e.g. AVL waits for an insert).
+      if (before && before.n > 1) {
+        await next.click().catch(() => {});
+        await page.waitForTimeout(60);
+        const after = await readIdx(next);
+        assert(after && after.i >= 2, `[${m.id}] step forward did not advance (index ${after && after.i})`);
       }
     }
 

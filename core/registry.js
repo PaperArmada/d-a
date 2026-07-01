@@ -6,7 +6,7 @@
   const byId = {};
 
   const CATEGORY_ORDER = [
-    'Sorting', 'Searching', 'Data Structures', 'Trees', 'Heaps',
+    'Lessons', 'Sorting', 'Searching', 'Data Structures', 'Trees', 'Heaps',
     'Hashing', 'Graphs', 'Recursion & DP'
   ];
 
