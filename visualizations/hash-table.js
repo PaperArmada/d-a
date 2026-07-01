@@ -11,9 +11,10 @@
     blurb: 'Separate chaining. Average O(1) insert / search / delete.',
     longDesc: 'A hash table maps a key to a bucket via hash(key) % size. Collisions are handled here by ' +
       'chaining — each bucket holds a small list. Average operations are O(1); worst case O(n) if everything collides.',
-    create: function (container) {
-      let size = 8;
+    create: function (container, params) {
+      let size = params && params.size ? Math.max(2, parseInt(params.size, 10) || 8) : 8;
       let buckets = Array.from({ length: size }, () => []);
+      const seedKeys = params && params.keys ? params.keys.split(',').filter(Boolean) : null;
 
       function hash(key) {
         let h = 0; const s = String(key);
@@ -95,6 +96,9 @@
           Util.distinctArray(10, 10, 99).forEach((k) => buckets[hash(k)].push(String(k)));
           render(); setStatus('inserted 10 random keys');
         } }, '🎲 Fill'),
+        window.Share.button(function () {
+          return { id: 'hash-table', params: { size: size, keys: [].concat.apply([], buckets).join(',') } };
+        }, function () { setStatus('🔗 Link copied — reproduces these keys and bucket count.'); }),
         el('button.btn.btn--ghost', { onclick: function () { buckets = Array.from({ length: size }, () => []); render(); setStatus('cleared'); } }, '🗑')
       ]);
 
@@ -112,7 +116,7 @@
         el('span.pill', [el('b', 'Space: '), 'O(n)'])
       ]));
       // seed
-      [15, 23, 42, 8, 31].forEach((k) => buckets[hash(String(k))].push(String(k)));
+      (seedKeys || [15, 23, 42, 8, 31].map(String)).forEach((k) => buckets[hash(String(k))].push(String(k)));
       render();
       setStatus('Hash table with chaining. Try inserting keys that collide into the same bucket.');
       return {};

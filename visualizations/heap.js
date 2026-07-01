@@ -12,8 +12,14 @@
     longDesc: 'A binary min-heap keeps every parent ≤ its children, stored compactly in an array ' +
       '(children of i are 2i+1 and 2i+2). Insert bubbles up; extract-min swaps the root with the last ' +
       'element and sinks it down.',
-    create: function (container) {
-      let heap = [5, 12, 8, 20, 15, 22, 30];
+    create: function (container, params) {
+      let heap = (params && params.vals) ? window.Util.parseList(params.vals, null) : null;
+      if (!heap || heap.length < 1) heap = [5, 12, 8, 20, 15, 22, 30];
+      // heapify (idempotent on an already-valid heap, so shared links round-trip)
+      for (let i = (heap.length >> 1) - 1; i >= 0; i--) {
+        let x = i; while (true) { let s = x, l = 2 * x + 1, r = 2 * x + 2;
+          if (l < heap.length && heap[l] < heap[s]) s = l; if (r < heap.length && heap[r] < heap[s]) s = r;
+          if (s === x) break; [heap[x], heap[s]] = [heap[s], heap[x]]; x = s; } }
       let timer = null;
       function stop() { if (timer) { clearTimeout(timer); timer = null; } }
 
@@ -149,6 +155,8 @@
               if (s === x) break; [heap[x], heap[s]] = [heap[s], heap[x]]; x = s; } }
           render(); setStatus('random heap built');
         } }, '🎲 Random'),
+        window.Share.button(function () { return { id: 'heap', params: { vals: heap.join(',') } }; },
+          function () { setStatus('🔗 Link copied — reproduces this heap.'); }),
         el('button.btn.btn--ghost', { onclick: function () { stop(); heap = []; render(); setStatus('cleared'); } }, '🗑')
       ]);
 

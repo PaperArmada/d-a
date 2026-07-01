@@ -111,6 +111,8 @@
           });
         } }, '🔎 startsWith'),
         el('span.spacer'),
+        window.Share.button(function () { return { id: 'trie', params: { words: collect(root, '').join(',') } }; },
+          function () { setStatus('🔗 Link copied — reproduces this word set.'); }),
         el('button.btn.btn--ghost', { onclick: function () {
           stop(); for (const k in root.children) delete root.children[k]; render(); setStatus('cleared');
         } }, '🗑 Clear')

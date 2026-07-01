@@ -14,8 +14,10 @@
     const btns = opts.buttons.map(function (b) {
       return el('button.btn' + (b.primary ? '.btn--primary' : ''), { onclick: () => b.onClick(input.value.trim()) }, b.label);
     });
-    const controls = el('div.controls', [input, ...btns, el('span.spacer'),
-      el('button.btn.btn--ghost', { onclick: opts.onClear }, '🗑 Clear')]);
+    const tail = [el('span.spacer')];
+    if (opts.share) tail.push(window.Share.button(opts.share, function () { status.innerHTML = '🔗 Link copied.'; }));
+    tail.push(el('button.btn.btn--ghost', { onclick: opts.onClear }, '🗑 Clear'));
+    const controls = el('div.controls', [input, ...btns, ...tail]);
     container.appendChild(controls);
     container.appendChild(status);
     container.appendChild(stage);
@@ -32,8 +34,8 @@
     blurb: 'Last-in, first-out. push / pop / peek in O(1).',
     longDesc: 'A stack grows and shrinks from a single end (the top). Push adds to the top, ' +
       'pop removes from the top. Think of a stack of plates.',
-    create: function (container) {
-      let stack = [10, 25, 7];
+    create: function (container, params) {
+      let stack = params && params.vals ? params.vals.split(',').filter((s) => s !== '') : [10, 25, 7];
       let ui;
       function render(highlightTop, mode) {
         clear(ui.stage);
@@ -69,6 +71,7 @@
           } }
         ],
         onClear: function () { stack = []; render(); ui.setStatus('cleared'); },
+        share: function () { return { id: 'stack', params: { vals: stack.join(',') } }; },
         legend: [{ color: 'var(--accent)', label: 'Pushed' }, { color: 'var(--danger)', label: 'Popped' }, { color: 'var(--warn)', label: 'Peek' }]
       });
       render();
@@ -85,8 +88,8 @@
     blurb: 'First-in, first-out. enqueue / dequeue in O(1).',
     longDesc: 'A queue adds at the back (enqueue) and removes from the front (dequeue). ' +
       'Like a line of people waiting.',
-    create: function (container) {
-      let queue = [3, 8, 15];
+    create: function (container, params) {
+      let queue = params && params.vals ? params.vals.split(',').filter((s) => s !== '') : [3, 8, 15];
       let ui;
       function render(hi, mode) {
         clear(ui.stage);
@@ -123,6 +126,7 @@
           } }
         ],
         onClear: function () { queue = []; render(); ui.setStatus('cleared'); },
+        share: function () { return { id: 'queue', params: { vals: queue.join(',') } }; },
         legend: [{ color: 'var(--accent)', label: 'Enqueued' }, { color: 'var(--danger)', label: 'Dequeued' }, { color: 'var(--warn)', label: 'Front' }]
       });
       render();

@@ -49,9 +49,17 @@
     blurb: 'Ordered tree. insert / search / delete in O(h); traversals.',
     longDesc: 'A BST keeps every left subtree smaller and every right subtree larger than the node. ' +
       'That ordering makes search, insert and delete run in O(h) — O(log n) when balanced.',
-    create: function (container) {
+    create: function (container, params) {
       let root = null;
-      [50, 30, 70, 20, 40, 60, 80, 35].forEach(function (v) { root = insert(root, v); });
+      const seed = (params && params.seq) ? Util.parseList(params.seq, null) : [50, 30, 70, 20, 40, 60, 80, 35];
+      (seed || []).forEach(function (v) { root = insert(root, v); });
+
+      // Level-order (BFS) values reconstruct the identical BST shape.
+      function levelOrder() {
+        const out = []; const q = root ? [root] : [];
+        while (q.length) { const n = q.shift(); out.push(n.v); if (n.left) q.push(n.left); if (n.right) q.push(n.right); }
+        return out;
+      }
 
       const input = el('input.field', { type: 'text', value: String(Util.randInt(1, 99)), style: { width: '80px' } });
       const status = el('div.status', { html: '&nbsp;' });
@@ -154,6 +162,8 @@
         el('button.btn', { onclick: () => traverse('pre') }, 'Preorder'),
         el('button.btn', { onclick: () => traverse('post') }, 'Postorder'),
         el('button.btn', { onclick: () => traverse('bfs') }, 'BFS'),
+        window.Share.button(function () { return { id: 'bst', params: { seq: levelOrder().join(',') } }; },
+          function () { setStatus('🔗 Link copied — reproduces this exact tree.'); }),
         el('button.btn.btn--ghost', { onclick: function () { stop(); root = null; render(); setStatus('cleared'); } }, '🗑')
       ]);
 

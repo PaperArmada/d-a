@@ -11,8 +11,9 @@
     blurb: 'Nodes linked by pointers. O(1) head insert, O(n) search.',
     longDesc: 'A singly linked list stores each value in a node that points to the next. ' +
       'Insertion at the head is O(1); finding or deleting a value requires walking the chain.',
-    create: function (container) {
-      let list = [4, 9, 1, 7];
+    create: function (container, params) {
+      let list = (params && params.vals) ? Util.parseList(params.vals, null) : null;
+      if (!list) list = [4, 9, 1, 7];
 
       const input = el('input.field', { type: 'text', value: String(Util.randInt(1, 99)), style: { width: '80px' } });
       const idx = el('input', { type: 'number', min: '0', value: '0', title: 'index' });
@@ -109,6 +110,8 @@
             setTimeout(function () { list.splice(found, 1); render(); setStatus('Deleted <b>' + t + '</b>'); }, 450);
           });
         } }, '❌ Delete'),
+        window.Share.button(function () { return { id: 'linked-list', params: { vals: list.join(',') } }; },
+          function () { setStatus('🔗 Link copied — reproduces this list.'); }),
         el('button.btn.btn--ghost', { onclick: function () { list = []; render(); setStatus('cleared'); } }, '🗑 Clear')
       ]);
 
