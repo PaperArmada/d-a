@@ -1,41 +1,102 @@
-/* App — builds the sidebar catalog, handles routing (hash), mounts/unmounts
-   the selected visualization. */
+/* App — sidebar catalog, search, hash routing (#/id?params), theme toggle,
+   mount/unmount of the selected visualization. */
 (function (global) {
   'use strict';
   const { el, clear } = global.DOM;
   const Registry = global.Registry;
 
-  let sidebar, main, current = null, activeNav = null;
+  let sidebar, main, current = null;
   let navItems = [];
 
   function init() {
     sidebar = document.getElementById('sidebar');
     main = document.getElementById('main');
+    applyStoredTheme();
     buildSidebar('');
     window.addEventListener('hashchange', route);
+    window.addEventListener('keydown', function (e) {
+      if (e.key === '/' && document.activeElement && document.activeElement.tagName !== 'INPUT') {
+        const s = document.querySelector('.search'); if (s) { e.preventDefault(); s.focus(); }
+      }
+    });
     route();
   }
 
+  // ---- Theme -------------------------------------------------------------
+  function applyStoredTheme() {
+    const t = localStorage.getItem('dsa-theme');
+    if (t === 'light') document.body.classList.add('light');
+  }
+  function toggleTheme() {
+    const light = document.body.classList.toggle('light');
+    localStorage.setItem('dsa-theme', light ? 'light' : 'dark');
+    const btn = document.getElementById('theme-btn');
+    if (btn) btn.textContent = light ? '🌙' : '☀️';
+  }
+
+  // ---- Routing helpers ---------------------------------------------------
+  function parseHash() {
+    const h = location.hash.replace(/^#\/?/, '');
+    if (!h) return { id: null, params: {} };
+    const qi = h.indexOf('?');
+    if (qi < 0) return { id: decodeURIComponent(h), params: {} };
+    const id = decodeURIComponent(h.slice(0, qi));
+    const params = {};
+    h.slice(qi + 1).split('&').forEach(function (kv) {
+      if (!kv) return;
+      const eq = kv.indexOf('=');
+      const k = decodeURIComponent(eq < 0 ? kv : kv.slice(0, eq));
+      const v = eq < 0 ? '' : decodeURIComponent(kv.slice(eq + 1));
+      params[k] = v;
+    });
+    return { id: id, params: params };
+  }
+  function buildLink(id, params) {
+    let s = '#/' + encodeURIComponent(id);
+    const keys = Object.keys(params || {});
+    if (keys.length) {
+      s += '?' + keys.map((k) => encodeURIComponent(k) + '=' + encodeURIComponent(params[k])).join('&');
+    }
+    return s;
+  }
+
+  // Expose a small router API for visualizations (e.g. copy-link buttons).
+  global.Router = {
+    buildLink: buildLink,
+    // Update the address bar silently (no re-mount), for shareable state.
+    setParams: function (params) {
+      const id = parseHash().id;
+      if (!id) return;
+      history.replaceState(null, '', location.pathname + location.search + buildLink(id, params));
+    },
+    absoluteLink: function (id, params) {
+      return location.origin + location.pathname + location.search + buildLink(id, params);
+    }
+  };
+
+  // ---- Sidebar -----------------------------------------------------------
   function buildSidebar(filter) {
     clear(sidebar);
     navItems = [];
     sidebar.appendChild(el('div.sidebar__brand', [
-      el('h1', 'DSA'), el('span', 'Visualizer')
+      el('h1', 'DSA'), el('span', 'Visualizer'),
+      el('span.spacer'),
+      el('button.icon-btn#theme-btn', {
+        title: 'Toggle light / dark theme', 'aria-label': 'Toggle theme', onclick: toggleTheme
+      }, document.body.classList.contains('light') ? '🌙' : '☀️')
     ]));
 
     const search = el('input.search', {
-      type: 'text', placeholder: 'Search visualizations…', value: filter
+      type: 'text', placeholder: 'Search visualizations…  ( / )', value: filter, 'aria-label': 'Search'
     });
     search.addEventListener('input', () => buildSidebar(search.value.trim().toLowerCase()));
     sidebar.appendChild(search);
-    // keep focus after rebuild
-    if (filter) { setTimeout(() => { search.focus(); search.selectionStart = search.value.length; }, 0); }
+    if (filter) setTimeout(() => { search.focus(); search.selectionStart = search.value.length; }, 0);
 
     sidebar.appendChild(el('a.nav-item', { href: '#/' }, '🏠 Home'));
 
-    const groups = Registry.grouped();
     let shown = 0;
-    groups.forEach(function (g) {
+    Registry.grouped().forEach(function (g) {
       const items = g.items.filter(function (it) {
         if (!filter) return true;
         return (it.title + ' ' + it.blurb + ' ' + it.category).toLowerCase().indexOf(filter) >= 0;
@@ -44,12 +105,10 @@
       shown += items.length;
       const cat = el('div.cat', [el('div.cat__title', g.category)]);
       items.forEach(function (it) {
-        const node = el('a.nav-item', { href: '#/' + it.id, dataset: { id: it.id } }, [
-          it.title,
-          el('span.nav-item__blurb', it.blurb)
-        ]);
-        navItems.push(node);
-        cat.appendChild(node);
+        cat.appendChild(el('a.nav-item', { href: '#/' + it.id, dataset: { id: it.id } }, [
+          it.title, el('span.nav-item__blurb', it.blurb)
+        ]));
+        navItems.push(cat.lastChild);
       });
       sidebar.appendChild(cat);
     });
@@ -59,25 +118,18 @@
   }
 
   function highlightActive() {
-    const id = currentId();
-    navItems.forEach(function (n) {
-      n.classList.toggle('active', n.dataset.id === id);
-    });
+    const id = parseHash().id;
+    navItems.forEach((n) => n.classList.toggle('active', n.dataset.id === id));
   }
 
-  function currentId() {
-    const h = location.hash.replace(/^#\/?/, '');
-    return h || null;
-  }
-
+  // ---- Route -------------------------------------------------------------
   function route() {
     if (current && current.destroy) { try { current.destroy(); } catch (e) {} }
     current = null;
     clear(main);
-    const id = currentId();
+    const { id, params } = parseHash();
 
     if (!id) { renderLanding(); highlightActive(); return; }
-
     const def = Registry.get(id);
     if (!def) { renderLanding(); highlightActive(); return; }
 
@@ -88,7 +140,7 @@
     const host = el('div.viz-host');
     main.appendChild(host);
     try {
-      current = def.create(host) || null;
+      current = def.create(host, params) || null;
     } catch (e) {
       host.appendChild(el('div.status', 'Error creating visualization: ' + e.message));
       console.error(e);
@@ -101,19 +153,16 @@
     main.appendChild(el('div.main__header', [
       el('h2', 'Data Structures & Algorithms — Interactive Visualizations'),
       el('p', 'A modular, dependency-free collection. Pick a topic from the sidebar or a card below. ' +
-              'Everything runs client-side with plain HTML/CSS/JS — step through algorithms, tweak inputs, ' +
-              'and build intuition.')
+              'Step through algorithms, tweak inputs, follow the synced pseudocode, and build intuition. ' +
+              'Keyboard: Space = play/pause, ← / → = step, “/” = search.')
     ]));
-
     Registry.grouped().forEach(function (g) {
       main.appendChild(el('h3', { style: { margin: '26px 0 4px', fontSize: '15px', color: 'var(--text-dim)',
         textTransform: 'uppercase', letterSpacing: '1px' } }, g.category));
       const grid = el('div.landing__grid');
       g.items.forEach(function (it) {
         grid.appendChild(el('div.card', { onclick: () => { location.hash = '#/' + it.id; } }, [
-          el('span.card__tag', it.category),
-          el('h3', it.title),
-          el('p', it.blurb)
+          el('span.card__tag', it.category), el('h3', it.title), el('p', it.blurb)
         ]));
       });
       main.appendChild(grid);

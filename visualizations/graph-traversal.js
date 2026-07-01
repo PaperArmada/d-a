@@ -26,39 +26,41 @@
     const adj = adjacency(g); const frames = [];
     const visited = new Set(); const queue = [start]; const inQ = new Set([start]);
     const order = [];
-    frames.push({ g, visited: [], frontier: [start], current: null, order: [], status: 'Enqueue start node ' + start });
+    const ct = () => ({ Visited: order.length });
+    frames.push({ g, visited: [], frontier: [start], current: null, order: [], line: 0, counters: ct(), status: 'Enqueue start node ' + start });
     while (queue.length) {
       const u = queue.shift(); inQ.delete(u);
       if (visited.has(u)) continue;
       visited.add(u); order.push(u);
-      frames.push({ g, visited: order.slice(), frontier: [...inQ], current: u,
+      frames.push({ g, visited: order.slice(), frontier: [...inQ], current: u, line: 4, counters: ct(),
         status: 'Dequeue ' + u + ' → visit. Order: [' + order.join(', ') + ']' });
       adj[u].forEach(function (v) {
         if (!visited.has(v) && !inQ.has(v)) { queue.push(v); inQ.add(v); }
       });
-      frames.push({ g, visited: order.slice(), frontier: [...inQ], current: u, activeEdges: adj[u].filter((v) => inQ.has(v)).map((v) => [u, v]),
+      frames.push({ g, visited: order.slice(), frontier: [...inQ], current: u, activeEdges: adj[u].filter((v) => inQ.has(v)).map((v) => [u, v]), line: 5, counters: ct(),
         status: 'Enqueue unvisited neighbors of ' + u + ': [' + adj[u].filter((v) => inQ.has(v)).join(', ') + ']' });
     }
-    frames.push({ g, visited: order.slice(), frontier: [], current: null, done: true, status: 'BFS complete: ' + order.join(' → ') });
+    frames.push({ g, visited: order.slice(), frontier: [], current: null, done: true, line: 1, counters: ct(), status: 'BFS complete: ' + order.join(' → ') });
     return frames;
   }
 
   function dfsFrames(g, start) {
     const adj = adjacency(g); const frames = [];
     const visited = new Set(); const order = []; const stack = [start];
-    frames.push({ g, visited: [], frontier: [start], current: null, order: [], status: 'Push start node ' + start });
+    const ct = () => ({ Visited: order.length });
+    frames.push({ g, visited: [], frontier: [start], current: null, order: [], line: 0, counters: ct(), status: 'Push start node ' + start });
     while (stack.length) {
       const u = stack.pop();
       if (visited.has(u)) continue;
       visited.add(u); order.push(u);
-      frames.push({ g, visited: order.slice(), frontier: [...stack], current: u,
+      frames.push({ g, visited: order.slice(), frontier: [...stack], current: u, line: 4, counters: ct(),
         status: 'Pop ' + u + ' → visit. Order: [' + order.join(', ') + ']' });
       const toPush = adj[u].filter((v) => !visited.has(v)).reverse();
       toPush.forEach((v) => stack.push(v));
-      frames.push({ g, visited: order.slice(), frontier: [...stack], current: u, activeEdges: toPush.map((v) => [u, v]),
+      frames.push({ g, visited: order.slice(), frontier: [...stack], current: u, activeEdges: toPush.map((v) => [u, v]), line: 5, counters: ct(),
         status: 'Push unvisited neighbors of ' + u });
     }
-    frames.push({ g, visited: order.slice(), frontier: [], current: null, done: true, status: 'DFS complete: ' + order.join(' → ') });
+    frames.push({ g, visited: order.slice(), frontier: [], current: null, done: true, line: 1, counters: ct(), status: 'DFS complete: ' + order.join(' → ') });
     return frames;
   }
 
@@ -87,13 +89,31 @@
     stage.appendChild(svg);
   }
 
+  const BFS_PC = [
+    'queue = [start]',
+    'while queue not empty:',
+    '  u = queue.dequeue()',
+    '  if u already visited: skip',
+    '  mark u visited',
+    '  enqueue u\'s unvisited neighbors'
+  ];
+  const DFS_PC = [
+    'stack = [start]',
+    'while stack not empty:',
+    '  u = stack.pop()',
+    '  if u already visited: skip',
+    '  mark u visited',
+    '  push u\'s unvisited neighbors'
+  ];
+
   function makeViz(key, name, framesFn, desc) {
     return {
       id: 'graph-' + key,
       title: name,
       category: 'Graphs',
       blurb: desc,
-      longDesc: name + ' explores a graph from a start node. ' +
+      longDesc: name + ' explores a graph from a start node, with the executing pseudocode line ' +
+        'highlighted and a live visited count. ' +
         (key === 'bfs' ? 'BFS uses a queue and visits nodes in layers of increasing distance.'
                        : 'DFS uses a stack (or recursion) and dives deep before backtracking.'),
       create: function (container) {
@@ -102,6 +122,8 @@
         const api = window.Scaffold.createStepViz(container, {
           baseDelay: 700,
           render: render,
+          pseudocode: key === 'bfs' ? BFS_PC : DFS_PC,
+          counters: ['Visited'],
           legend: [
             { color: 'var(--warn)', label: 'Current' },
             { color: '#c084fc', label: key === 'bfs' ? 'In queue' : 'On stack' },
