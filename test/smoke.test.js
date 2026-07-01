@@ -71,6 +71,37 @@ async function run() {
 
   console.log(`Registry: ${ids.length} visualizations — ${meta.map((m) => m.id).join(', ')}\n`);
 
+  // ---- Algorithm correctness (pure logic, via window.__algos) -------------
+  const logic = await page.evaluate(() => {
+    const out = [];
+    const isSorted = (a) => a.every((v, i) => i === 0 || a[i - 1] <= v);
+    const sameMultiset = (a, b) => a.length === b.length &&
+      JSON.stringify(a.slice().sort((x, y) => x - y)) === JSON.stringify(b.slice().sort((x, y) => x - y));
+    const A = window.__algos || {};
+    // sorts: last frame must be sorted and a permutation of the input
+    const input = [42, 7, 7, 1, 99, 13, 8, 30, 5, 21, 3, 60];
+    for (const key in (A.sort || {})) {
+      const frames = A.sort[key].fn(input);
+      const last = frames[frames.length - 1].array;
+      if (!isSorted(last)) out.push(`sort ${key}: output not sorted → ${last}`);
+      if (!sameMultiset(last, input)) out.push(`sort ${key}: output is not a permutation of the input`);
+    }
+    // searches
+    if (A.search) {
+      const arr = [1, 3, 5, 7, 9, 11];
+      const lf = A.search.linear(arr, 7);
+      if (!lf[lf.length - 1].hit && lf[lf.length - 1].hit !== 0) out.push('linear search: failed to find present element');
+      const lm = A.search.linear(arr, 8);
+      if (lm[lm.length - 1].hit != null) out.push('linear search: false positive for absent element');
+      const bf = A.search.binary(arr, 9);
+      if (bf[bf.length - 1].hit == null) out.push('binary search: failed to find present element');
+    }
+    return out;
+  }).catch((e) => ['logic harness error: ' + e.message]);
+  logic.forEach((msg) => failures.push('logic: ' + msg));
+  console.log(logic.length ? `Logic checks: ${logic.length} FAILED` : 'Logic checks: sorts sorted + permutations, searches correct ✓');
+  console.log('');
+
   // ---- Per-visualization checks ------------------------------------------
   for (const m of meta) {
     errors = [];
@@ -90,16 +121,25 @@ async function run() {
       return !!p;
     });
     if (hasPlayer) {
-      const next = await page.$('.viz-host .btn[title="Step forward"]');
-      if (next) {
-        await next.click().catch(() => {});
-        await page.waitForTimeout(60);
-        const progressed = await page.evaluate(() => {
-          const p = [...document.querySelectorAll('.viz-host .controls .mono.dim')]
-            .find((e) => /\d+\s*\/\s*\d+/.test(e.textContent));
-          return p ? p.textContent.trim() : '';
-        });
-        assert(/^[2-9]|\d\d/.test(progressed), `[${m.id}] step forward did not advance (got "${progressed}")`);
+      const total = await page.evaluate(() => {
+        const p = [...document.querySelectorAll('.viz-host .controls .mono.dim')]
+          .find((e) => /\d+\s*\/\s*\d+/.test(e.textContent));
+        return p ? parseInt(p.textContent.split('/')[1], 10) : 0;
+      });
+      // Some viz start with a single frame (e.g. AVL waits for an insert); only
+      // assert advancement when there are multiple frames to step through.
+      if (total > 1) {
+        const next = await page.$('.viz-host .btn[title="Step forward"]');
+        if (next) {
+          await next.click().catch(() => {});
+          await page.waitForTimeout(60);
+          const idx = await page.evaluate(() => {
+            const p = [...document.querySelectorAll('.viz-host .controls .mono.dim')]
+              .find((e) => /\d+\s*\/\s*\d+/.test(e.textContent));
+            return p ? parseInt(p.textContent.split('/')[0], 10) : 0;
+          });
+          assert(idx >= 2, `[${m.id}] step forward did not advance (index ${idx})`);
+        }
       }
     }
 
