@@ -1,0 +1,14 @@
+{
+  "name": "dsa-visualizer",
+  "version": "1.0.0",
+  "description": "Modular, dependency-free interactive data structure & algorithm visualizations.",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "test": "node test/smoke.test.js",
+    "serve": "python3 -m http.server 8000"
+  },
+  "devDependencies": {
+    "playwright": "^1.40.0"
+  }
+}

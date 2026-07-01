@@ -97,6 +97,20 @@ Create `visualizations/my-thing.js` and register it:
 Then add one `<script>` line to `index.html`. That's it — the sidebar, search, routing,
 and landing-page card are generated automatically from the registry.
 
+## Testing
+
+A headless-browser smoke test loads every registered visualization and checks that it
+mounts without errors, renders, steps through frames, and survives clicking all controls.
+
+```bash
+npm install     # installs Playwright (only dependency, dev-only)
+npm test        # runs test/smoke.test.js against index.html
+```
+
+The app itself stays dependency-free — Playwright is a **dev-only** dependency used purely
+for the test. The harness auto-detects Chromium (`$CHROMIUM_PATH`, then a browser under
+`$PLAYWRIGHT_BROWSERS_PATH`, then Playwright's bundled build).
+
 ## Design notes
 
 - **No dependencies.** Nothing to install; works offline from `file://`.
