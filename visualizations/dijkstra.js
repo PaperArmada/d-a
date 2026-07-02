@@ -86,6 +86,16 @@
         style: 'fill:var(--accent-2);font-weight:700', text: d === Infinity ? '∞' : String(d) }));
     });
     stage.appendChild(svg);
+
+    // The state that drives Dijkstra: tentative distance for every node.
+    // Settled (green) = final; the node being relaxed against is highlighted.
+    if (frame.dist) {
+      const rows = g.nodes.map(function (nd) {
+        return { key: nd.id, val: frame.dist[nd.id] === Infinity ? null : frame.dist[nd.id],
+          state: nd.id === frame.current ? 'active' : (visited.has(nd.id) ? 'settled' : '') };
+      });
+      stage.appendChild(window.Widgets.keyVal('Tentative distance from source (green = settled / final)', rows));
+    }
   }
 
   window.Registry.register({

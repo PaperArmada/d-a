@@ -27,20 +27,21 @@
     const visited = new Set(); const queue = [start]; const inQ = new Set([start]);
     const order = [];
     const ct = () => ({ Visited: order.length });
-    frames.push({ g, visited: [], frontier: [start], current: null, order: [], line: 0, counters: ct(), status: 'Enqueue start node ' + start });
+    const base = () => ({ g, kind: 'queue', container: queue.slice(), counters: ct() });
+    frames.push(Object.assign(base(), { visited: [], frontier: [start], current: null, line: 0, status: 'Enqueue start node ' + start }));
     while (queue.length) {
       const u = queue.shift(); inQ.delete(u);
       if (visited.has(u)) continue;
       visited.add(u); order.push(u);
-      frames.push({ g, visited: order.slice(), frontier: [...inQ], current: u, line: 4, counters: ct(),
-        status: 'Dequeue ' + u + ' → visit. Order: [' + order.join(', ') + ']' });
-      adj[u].forEach(function (v) {
-        if (!visited.has(v) && !inQ.has(v)) { queue.push(v); inQ.add(v); }
-      });
-      frames.push({ g, visited: order.slice(), frontier: [...inQ], current: u, activeEdges: adj[u].filter((v) => inQ.has(v)).map((v) => [u, v]), line: 5, counters: ct(),
-        status: 'Enqueue unvisited neighbors of ' + u + ': [' + adj[u].filter((v) => inQ.has(v)).join(', ') + ']' });
+      frames.push(Object.assign(base(), { visited: order.slice(), frontier: [...inQ], current: u, popped: u, line: 4,
+        status: 'Dequeue ' + u + ' (front) → visit. Order: [' + order.join(', ') + ']' }));
+      const added = [];
+      adj[u].forEach(function (v) { if (!visited.has(v) && !inQ.has(v)) { queue.push(v); inQ.add(v); added.push(v); } });
+      frames.push(Object.assign(base(), { visited: order.slice(), frontier: [...inQ], current: u, added: added.slice(),
+        activeEdges: added.map((v) => [u, v]), line: 5,
+        status: 'Enqueue unvisited neighbors of ' + u + ' at the back: [' + added.join(', ') + ']' }));
     }
-    frames.push({ g, visited: order.slice(), frontier: [], current: null, done: true, line: 1, counters: ct(), status: 'BFS complete: ' + order.join(' → ') });
+    frames.push(Object.assign(base(), { visited: order.slice(), frontier: [], current: null, done: true, line: 1, status: 'BFS complete: ' + order.join(' → ') }));
     return frames;
   }
 
@@ -48,19 +49,20 @@
     const adj = adjacency(g); const frames = [];
     const visited = new Set(); const order = []; const stack = [start];
     const ct = () => ({ Visited: order.length });
-    frames.push({ g, visited: [], frontier: [start], current: null, order: [], line: 0, counters: ct(), status: 'Push start node ' + start });
+    const base = () => ({ g, kind: 'stack', container: stack.slice(), counters: ct() });
+    frames.push(Object.assign(base(), { visited: [], frontier: [start], current: null, line: 0, status: 'Push start node ' + start }));
     while (stack.length) {
       const u = stack.pop();
       if (visited.has(u)) continue;
       visited.add(u); order.push(u);
-      frames.push({ g, visited: order.slice(), frontier: [...stack], current: u, line: 4, counters: ct(),
-        status: 'Pop ' + u + ' → visit. Order: [' + order.join(', ') + ']' });
+      frames.push(Object.assign(base(), { visited: order.slice(), frontier: [...stack], current: u, popped: u, line: 4,
+        status: 'Pop ' + u + ' (top) → visit. Order: [' + order.join(', ') + ']' }));
       const toPush = adj[u].filter((v) => !visited.has(v)).reverse();
       toPush.forEach((v) => stack.push(v));
-      frames.push({ g, visited: order.slice(), frontier: [...stack], current: u, activeEdges: toPush.map((v) => [u, v]), line: 5, counters: ct(),
-        status: 'Push unvisited neighbors of ' + u });
+      frames.push(Object.assign(base(), { visited: order.slice(), frontier: [...stack], current: u, added: toPush.slice(),
+        activeEdges: toPush.map((v) => [u, v]), line: 5, status: 'Push unvisited neighbors of ' + u + ' on top' }));
     }
-    frames.push({ g, visited: order.slice(), frontier: [], current: null, done: true, line: 1, counters: ct(), status: 'DFS complete: ' + order.join(' → ') });
+    frames.push(Object.assign(base(), { visited: order.slice(), frontier: [], current: null, done: true, line: 1, status: 'DFS complete: ' + order.join(' → ') }));
     return frames;
   }
 
@@ -87,6 +89,21 @@
       svg.appendChild(svgEl('text', { x: n.x, y: n.y, class: 'node-text' + (filled ? ' on-fill' : ''), text: String(n.id) }));
     });
     stage.appendChild(svg);
+
+    // The data structure that drives the order — the heart of the mechanism.
+    if (frame.container) {
+      const isQueue = frame.kind === 'queue';
+      stage.appendChild(window.Widgets.dsStrip({
+        title: isQueue ? 'Queue' : 'Stack',
+        subtitle: isQueue ? 'dequeue from the front, enqueue at the back'
+                          : 'push and pop from the top',
+        items: frame.container,
+        nextOutIndex: frame.container.length ? (isQueue ? 0 : frame.container.length - 1) : null,
+        enterCount: (frame.added || []).length,
+        endLabels: isQueue ? { left: 'front', right: 'back' } : { left: 'bottom', right: 'top' },
+        chipClass: 'is-frontier'
+      }));
+    }
   }
 
   const BFS_PC = [
