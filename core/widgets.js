@@ -75,5 +75,17 @@
     ]);
   }
 
-  global.Widgets = { dsStrip: dsStrip, keyVal: keyVal };
+  /* dpArrow — the glyph pointing from a DP cell toward the neighbour it was
+     derived from (↖ diagonal, ↑ up, ← left). Makes the recurrence legible. */
+  function dpArrow(cur, fromList) {
+    if (!cur || !fromList || !fromList.length) return '';
+    const i = cur[0], j = cur[1], si = fromList[0][0], sj = fromList[0][1];
+    const di = i - si, dj = j - sj;
+    if (di > 0 && dj > 0) return '↖';
+    if (di > 0) return '↑';
+    if (dj > 0) return '←';
+    return '';
+  }
+
+  global.Widgets = { dsStrip: dsStrip, keyVal: keyVal, dpArrow: dpArrow };
 })(window);

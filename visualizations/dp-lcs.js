@@ -76,7 +76,12 @@
             if (mark.cell && mark.cell[0] === i && mark.cell[1] === j) hl = 'var(--warn)';
             else if (pathSet.has(key)) hl = 'var(--good)';
             else if (fromSet.has(key)) hl = 'var(--accent)';
-            tr.appendChild(mkCell(dp[i][j], '', hl));
+            const td = mkCell(dp[i][j], '', hl);
+            if (hl === 'var(--warn)') {
+              const g = window.Widgets.dpArrow(mark.cell, mark.from);
+              if (g) { td.style.position = 'relative'; td.appendChild(el('span.dp-arrow', g)); }
+            }
+            tr.appendChild(td);
           }
           table.appendChild(tr);
         }

@@ -304,6 +304,15 @@ input[type="number"] { width: 70px; }
 .cell.is-remove   { background: var(--danger); color: #0b0e1a; border-color: var(--danger); }
 .cell.is-new      { background: var(--accent); color: #0b0e1a; border-color: var(--accent); transform: translateY(-4px); }
 .cell.is-ghost    { opacity: .35; border-style: dashed; }
+/* Pointer rail under search cells (lo / mid / hi, or scan index i) */
+.cells--ptr { margin-bottom: 26px; }
+.cell__ptr {
+  position: absolute; bottom: -22px; left: 50%; transform: translateX(-50%);
+  font-family: var(--mono); font-size: 11px; font-weight: 700; white-space: nowrap;
+  color: var(--accent-2); min-height: 14px;
+}
+/* DP recurrence arrow: shows which neighbour the current cell derived from */
+.dp-arrow { position: absolute; top: 0; left: 3px; font-size: 12px; line-height: 1.1; color: #0b0e1a; opacity: .8; pointer-events: none; }
 
 /* ---- SVG-based structures (tree/list/graph) ---- */
 .svg-stage { width: 100%; overflow: auto; }

@@ -12,17 +12,34 @@
     let hint = stage.querySelector('.hint');
     if (!wrap || wrap.childElementCount !== n) {
       clear(stage);
-      wrap = el('div.cells');
-      for (let i = 0; i < n; i++) wrap.appendChild(el('div.cell', [el('div.cell__idx', String(i)), el('span.cell__val')]));
+      wrap = el('div.cells.cells--ptr');
+      for (let i = 0; i < n; i++) {
+        wrap.appendChild(el('div.cell', [
+          el('div.cell__idx', String(i)),
+          el('span.cell__val'),
+          el('div.cell__ptr')
+        ]));
+      }
       stage.appendChild(wrap);
       hint = el('p.hint'); stage.appendChild(hint);
     }
+    const binary = frame.lo != null && frame.hi != null;
     const cells = wrap.children;
     for (let i = 0; i < n; i++) {
       const cell = cells[i];
-      cell.lastChild.textContent = String(frame.array[i]);
-      const ghost = frame.lo != null && frame.hi != null && (i < frame.lo || i > frame.hi);
+      cell.children[1].textContent = String(frame.array[i]);
+      const ghost = binary && (i < frame.lo || i > frame.hi);
       cell.className = 'cell' + (ghost ? ' is-ghost' : '') + (i === frame.active ? ' is-active' : '') + (i === frame.hit ? ' is-hit' : '');
+      // Pointer rail: lo / mid / hi (binary) or scan pointer i (linear).
+      const parts = [];
+      if (binary) {
+        if (i === frame.lo) parts.push('lo');
+        if (i === frame.active) parts.push('mid');
+        if (i === frame.hi) parts.push('hi');
+      } else if (i === frame.active) {
+        parts.push('i');
+      }
+      cell.children[2].textContent = parts.join('/');
     }
     if (hint) hint.textContent = frame.target != null ? 'Searching for target = ' + frame.target : '';
   }

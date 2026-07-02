@@ -80,7 +80,12 @@
             if (mark.cell && mark.cell[0] === i && mark.cell[1] === w) bg = 'var(--warn)';
             else if (pathSet.has(key)) bg = 'var(--good)';
             else if (fromSet.has(key)) bg = 'var(--accent)';
-            tr.appendChild(cell(dp[i][w], bg));
+            const td = cell(dp[i][w], bg);
+            if (bg === 'var(--warn)') {
+              const g = window.Widgets.dpArrow(mark.cell, mark.from);
+              if (g) { td.style.position = 'relative'; td.appendChild(el('span.dp-arrow', g)); }
+            }
+            tr.appendChild(td);
           }
           table.appendChild(tr);
         }
