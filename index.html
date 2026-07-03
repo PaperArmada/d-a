@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>DSA Visualizer — Interactive Data Structures & Algorithms</title>
-  <meta name="description" content="A modular, dependency-free collection of interactive data structure and algorithm visualizations, built with plain HTML, CSS and JavaScript." />
+  <title>Software Foundations — Interactive Atlas of How Software Works</title>
+  <meta name="description" content="Interactive, dependency-free visualizations of the concrete foundations of software: algorithms, data structures, design patterns, runtime internals, memory, protocols, and storage." />
   <link rel="stylesheet" href="styles/main.css" />
   <link rel="icon" href="icon.svg" />
   <link rel="manifest" href="manifest.webmanifest" />
@@ -28,6 +28,14 @@
   <script src="core/share.js"></script>
 
   <!-- Visualization modules — each self-registers. Add new ones here. -->
+  <!-- Software Foundations wing -->
+  <script src="visualizations/binary-rep.js"></script>
+  <script src="visualizations/float-rep.js"></script>
+  <script src="visualizations/call-stack.js"></script>
+  <script src="visualizations/state-machine.js"></script>
+  <script src="visualizations/btree.js"></script>
+  <script src="visualizations/lru-cache.js"></script>
+  <!-- Algorithms wing -->
   <script src="visualizations/sorting.js"></script>
   <script src="visualizations/sort-race.js"></script>
   <script src="visualizations/searching.js"></script>

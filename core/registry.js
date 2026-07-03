@@ -6,9 +6,25 @@
   const byId = {};
 
   const CATEGORY_ORDER = [
-    'Lessons', 'Sorting', 'Searching', 'Data Structures', 'Trees', 'Heaps',
+    'Lessons',
+    // Software Foundations wing
+    'The Machine', 'Runtime', 'Design Patterns', 'Data & Storage', 'Systems', 'Craft',
+    // Algorithms & Data Structures wing
+    'Sorting', 'Searching', 'Data Structures', 'Trees', 'Heaps',
     'Hashing', 'Graphs', 'Recursion & DP'
   ];
+
+  const WING_OF = {
+    'Lessons': 'Learn',
+    'The Machine': 'Software Foundations', 'Runtime': 'Software Foundations',
+    'Design Patterns': 'Software Foundations', 'Data & Storage': 'Software Foundations',
+    'Systems': 'Software Foundations', 'Craft': 'Software Foundations',
+    'Sorting': 'Algorithms & Data Structures', 'Searching': 'Algorithms & Data Structures',
+    'Data Structures': 'Algorithms & Data Structures', 'Trees': 'Algorithms & Data Structures',
+    'Heaps': 'Algorithms & Data Structures', 'Hashing': 'Algorithms & Data Structures',
+    'Graphs': 'Algorithms & Data Structures', 'Recursion & DP': 'Algorithms & Data Structures'
+  };
+  function wingOf(category) { return WING_OF[category] || 'Software Foundations'; }
 
   function register(def) {
     if (!def || !def.id) throw new Error('viz needs an id');
@@ -30,5 +46,5 @@
     return order.map((c) => ({ category: c, items: map[c] }));
   }
 
-  global.Registry = { register, all, get, grouped };
+  global.Registry = { register, all, get, grouped, wingOf };
 })(window);

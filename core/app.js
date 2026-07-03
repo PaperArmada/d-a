@@ -109,7 +109,7 @@
     clear(sidebar);
     navItems = [];
     sidebar.appendChild(el('div.sidebar__brand', [
-      el('h1.brand-mark', 'DSA'), el('span', 'Visualizer'),
+      el('h1.brand-mark', 'Software'), el('span', 'Foundations'),
       el('span.spacer'),
       el('button.icon-btn#theme-btn', {
         title: 'Toggle light / dark theme', 'aria-label': 'Toggle theme', onclick: toggleTheme
@@ -126,6 +126,7 @@
     sidebar.appendChild(el('a.nav-item', { href: '#/' }, '🏠 Home'));
 
     let shown = 0;
+    let lastWing = null;
     Registry.grouped().forEach(function (g) {
       const items = g.items.filter(function (it) {
         if (!filter) return true;
@@ -133,6 +134,11 @@
       });
       if (!items.length) return;
       shown += items.length;
+      const wing = Registry.wingOf(g.category);
+      if (wing !== lastWing && wing !== 'Learn') {
+        sidebar.appendChild(el('div.wing-title', wing));
+        lastWing = wing;
+      }
       const cat = el('div.cat', [el('div.cat__title', g.category)]);
       items.forEach(function (it) {
         cat.appendChild(el('a.nav-item', { href: '#/' + it.id, dataset: { id: it.id } }, [
@@ -181,18 +187,27 @@
 
   function renderLanding() {
     main.appendChild(el('div.main__header', [
-      el('h2', 'Data Structures & Algorithms — Interactive Visualizations'),
-      el('p', 'A modular, dependency-free collection. Pick a topic from the sidebar or a card below. ' +
-              'Step through algorithms, tweak inputs, follow the synced pseudocode, and build intuition. ' +
+      el('h2', 'Software Foundations — an interactive atlas of how software works'),
+      el('p', 'Step through the concrete mechanisms of software 1.0: algorithms and data structures, ' +
+              'design patterns, runtime internals, memory & number representation, protocols, and storage. ' +
+              'Elements are atomic concepts; compounds are built from them. ' +
               'Keyboard: Space = play/pause, ← / → = step, “/” = search.')
     ]));
+    let lastWing = null;
     Registry.grouped().forEach(function (g) {
+      const wing = Registry.wingOf(g.category);
+      if (wing !== lastWing && wing !== 'Learn') {
+        main.appendChild(el('h2.landing-wing', wing));
+        lastWing = wing;
+      }
       main.appendChild(el('h3', { style: { margin: '26px 0 4px', fontSize: '15px', color: 'var(--text-dim)',
         textTransform: 'uppercase', letterSpacing: '1px' } }, g.category));
       const grid = el('div.landing__grid');
       g.items.forEach(function (it) {
         grid.appendChild(el('div.card', { onclick: () => { location.hash = '#/' + it.id; } }, [
-          el('span.card__tag', it.category), el('h3', it.title), el('p', it.blurb)
+          el('span.card__tag', it.category), el('h3', it.title), el('p', it.blurb),
+          it.madeOf ? el('p.card__madeof', ['⚗ compound: ',
+            it.madeOf.map((m) => (Registry.get(m) || { title: m }).title).join(' + ')]) : null
         ]));
       });
       main.appendChild(grid);
