@@ -153,6 +153,14 @@ pull request, so new visualizations can't silently break the collection.
 - **Single source of truth for playback.** `Player` handles all timing so modules never
   reimplement play/pause/step logic.
 
+## Roadmap
+
+The project is expanding beyond DSA into an interactive atlas of the concrete foundations of
+software — design patterns, runtime mechanics, memory & number representation, protocols, and
+storage internals. See **[docs/EXPANSION.md](docs/EXPANSION.md)** for the full taxonomy
+(elements vs. compounds), the selection criteria, the three new shared widgets it requires,
+and the four-wave build plan.
+
 ## License
 
 MIT — use it freely for teaching or learning.
