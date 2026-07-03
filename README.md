@@ -1,8 +1,9 @@
-# DSA Visualizer
+# Software Foundations (né DSA Visualizer)
 
-A comprehensive, **modular, dependency-free** collection of interactive data structure and
-algorithm visualizations. No build step, no frameworks, no `npm install` — just open
-`index.html`. Everything renders with plain HTML, CSS, SVG, and vanilla JavaScript.
+An interactive, **modular, dependency-free** atlas of how software actually works: algorithms
+and data structures, plus the concrete foundations of software 1.0 — design patterns, runtime
+internals, memory & number representation, protocols, and storage. No build step, no
+frameworks, no `npm install` — just open `index.html`. Plain HTML, CSS, SVG, and vanilla JS.
 
 ## Run it
 
@@ -24,11 +25,25 @@ Pages / Netlify / Vercel work too — point them at the repo, no build command, 
 
 **Live demo:** https://paperarmada.github.io/d-a/ · installable (PWA) and works offline.
 
-## What's included (29 visualizations + 4 guided lessons)
+## What's included (59 visualizations + 9 guided lessons)
+
+**Software Foundations wing** — *elements* (atomic mechanisms) and *compounds* (built from
+elements, declared on their cards):
+
+| Domain | Visualizations |
+| --- | --- |
+| **The Machine** | Binary & two's complement, IEEE-754 floats, UTF-8 encoding, stack vs heap, bitwise ops |
+| **Runtime** | Call stack, event loop, race conditions & locks, deadlock & lock ordering, GC mark & sweep |
+| **Design Patterns** | State machines, observer/pub-sub, strategy (hot-swaps the real sort engines), command/undo |
+| **Data & Storage** | B-tree, regex→state machine, index vs full scan, transactions & isolation, diff |
+| **Systems** | LRU cache, TCP handshake & retransmission, HTTP lifecycle, circuit breaker, token bucket, consistent hashing, git DAG |
+| **Craft** | Coupling & ripple effect, invariants & assertions, idempotency & retries, Big-O measured |
+
+**Algorithms & Data Structures wing:**
 
 | Category | Visualizations |
 | --- | --- |
-| **Lessons** | Guided tours that sequence visualizations with prose: Sorting, Graphs, Trees, Dynamic Programming |
+| **Lessons** | Nine guided tours: Sorting, Searching, Data Structures, Trees, Graphs, DP, Inside the Machine, Design Patterns, Systems |
 | **Sorting** | Bubble, Selection, Insertion, Merge, Quick, Heap, **Sorting Race** (all six side-by-side) |
 | **Searching** | Linear, Binary |
 | **Data Structures** | Stack (LIFO), Queue (FIFO), Linked List, **Trie** |

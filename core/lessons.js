@@ -330,6 +330,152 @@
 
     /* ------------------------------------------------------------------ */
     {
+      id: 'lesson-machine',
+      title: 'Inside the machine',
+      blurb: 'Bits, numbers, text, and memory — what your variables really are.',
+      steps: [
+        {
+          title: 'Integers are bit patterns',
+          viz: { id: 'binary-rep' },
+          intro: 'Every int is a fixed-width row of bits, each worth a power of two. Two\'s complement makes the top ' +
+            'bit worth −128, which lets the same adder circuit handle negative numbers.',
+          try: 'Press <b>Load 127</b>, then <b>＋1</b>. Welcome to integer overflow — not an error, a wrap.',
+          takeaway: 'Fixed width means a cliff exists. Know where yours is (2³¹−1 for 32-bit ints).'
+        },
+        {
+          title: 'Floats are approximations',
+          viz: { id: 'float-rep' },
+          intro: 'Floats are binary scientific notation. Most decimals (0.1!) have no finite binary form, so the ' +
+            'nearest representable value is stored instead — the error exists before you ever add anything.',
+          try: 'Press <b>0.1 + 0.2</b> and read the exactly-stored value. Then try <b>2²⁴+1</b> for the integer gap.',
+          takeaway: 'Never compare floats with ==; compare |a−b| < ε. And never store money in floats.'
+        },
+        {
+          title: 'Text is numbers too',
+          viz: { id: 'utf8' },
+          intro: 'Characters map to code points; UTF-8 packs each into 1–4 bytes with ASCII unchanged. ' +
+            '"Length" now has three honest answers: code points, bytes, and UTF-16 units.',
+          try: 'Press <b>é vs é</b> — two identical-looking strings with different code points. This is why comparisons need normalization.',
+          takeaway: 'Know which length you\'re asking for. Bugs live in the gap between the three.'
+        },
+        {
+          title: 'Two memories, two lifetimes',
+          viz: { id: 'stack-heap' },
+          intro: 'Stack frames die on return, automatically. Heap objects outlive the call that made them and only ' +
+            'die when unreachable. Locals hold heap addresses, not objects.',
+          watch: 'When makeUser() returns, its frame vanishes but {name:"Ada"} survives — main still points at it.',
+          takeaway: 'Stack = fast + automatic + LIFO. Heap = flexible + must be reclaimed (GC or free).'
+        },
+        {
+          title: 'Reclaiming the heap',
+          viz: { id: 'gc-mark-sweep' }, autoplay: true,
+          intro: 'The collector keeps what is REACHABLE from roots, not what you "still need". Mark walks the object ' +
+            'graph (it\'s BFS!); sweep frees the rest — including cycles that reference counting can\'t handle.',
+          try: 'Press <b>✂ Drop root→D</b> and rerun: D, E, F die even though E and F point at each other.',
+          takeaway: 'Memory leaks in GC languages = reachable-but-useless objects (caches, listeners you forgot).'
+        }
+      ]
+    },
+
+    /* ------------------------------------------------------------------ */
+    {
+      id: 'lesson-patterns',
+      title: 'Design patterns as mechanisms',
+      blurb: 'FSM, observer, strategy, command — patterns you can step through.',
+      steps: [
+        {
+          title: 'The state machine',
+          viz: { id: 'state-machine', params: { m: 'door' } },
+          intro: 'A machine is in exactly ONE state; inputs either follow a defined transition or are rejected. ' +
+            'Invalid actions become impossible instead of buggy — no boolean-flag soup.',
+          try: 'Try to <b>open</b> while Locked. The rejection is the feature.',
+          takeaway: 'If you\'re juggling isOpen + isLocked + isClosing flags, you\'re hand-rolling a worse FSM.'
+        },
+        {
+          title: 'Observer: change flows outward',
+          viz: { id: 'observer' },
+          intro: 'The subject keeps a list of subscribers and notifies them on change — it never knows their types. ' +
+            'This is DOM events, signals, and every message bus.',
+          try: 'Unsubscribe the Mailer, publish, and note the subject does not care.',
+          takeaway: 'Dependency inversion in action: the data source knows an interface, not its audience.'
+        },
+        {
+          title: 'Strategy: swap the algorithm',
+          viz: { id: 'strategy' },
+          intro: 'One context, one interface, interchangeable algorithms behind it — these are literally this app\'s ' +
+            'sorting engines being hot-swapped.',
+          try: 'Run bubble, swap to merge mid-session, run again. Compare the cost pills. No caller changed.',
+          takeaway: 'Where you see a growing if/else over "modes", a strategy slot usually fits.'
+        },
+        {
+          title: 'Command: actions as objects',
+          viz: { id: 'command-undo' },
+          intro: 'Wrap each mutation in an object that knows apply() and revert(). Undo/redo stop being features ' +
+            'and become two stack operations.',
+          try: 'Do three commands, undo two, then do something NEW — watch the redo stack vaporize (history branched).',
+          takeaway: 'Reified actions also buy you queues, macros, and audit logs for free.'
+        },
+        {
+          title: 'A pattern compound: circuit breaker',
+          viz: { id: 'circuit-breaker' },
+          intro: 'Patterns compose: the circuit breaker is a state machine (Closed/Open/Half-Open) applied to a ' +
+            'systems problem — protecting a failing dependency from hopeful retries.',
+          try: 'Fail three requests, tick the clock through the cooldown, then probe.',
+          takeaway: 'Recognize the FSM inside — that\'s the pattern-literacy this lesson is for.'
+        }
+      ]
+    },
+
+    /* ------------------------------------------------------------------ */
+    {
+      id: 'lesson-systems',
+      title: 'Systems: unreliable parts, reliable whole',
+      blurb: 'TCP, HTTP, retries, rate limits, caching — engineering around failure.',
+      steps: [
+        {
+          title: 'Reliability from unreliability',
+          viz: { id: 'tcp' }, autoplay: true,
+          intro: 'The network drops packets without telling anyone. TCP builds reliable delivery from three tools: ' +
+            'sequence numbers, ACKs, and retransmission timers.',
+          try: 'Switch to <b>💥 Lossy network</b>: silence triggers the timer, the same bytes go again, the app never notices.',
+          takeaway: 'Every "reliable" system is unreliable parts + acknowledgment + retry.'
+        },
+        {
+          title: 'The full page-load relay',
+          viz: { id: 'http-lifecycle' }, autoplay: true,
+          intro: 'One URL = four protocols in sequence: DNS (naming), TCP (reliability), TLS (privacy), HTTP (meaning). ' +
+            'Count the round-trips before a single byte of HTML moves.',
+          takeaway: 'Latency budgets die in round-trips, not bandwidth. That\'s why caching and keep-alive matter.'
+        },
+        {
+          title: 'Retries need consent',
+          viz: { id: 'idempotency' }, autoplay: true,
+          intro: 'A lost RESPONSE is indistinguishable from a lost request, so clients must retry. Idempotency keys ' +
+            'let the server detect the replay and answer from its ledger instead of charging twice.',
+          watch: 'The failure is identical in both runs — only the server\'s design differs.',
+          takeaway: 'Design every mutating endpoint as if it will be called twice. It will be.'
+        },
+        {
+          title: 'Protecting yourself: rate limits',
+          viz: { id: 'token-bucket' },
+          intro: 'A token bucket allows bursts up to its capacity while capping the sustained rate — the limiter ' +
+            'behind most public APIs and the 429s you\'ve met.',
+          try: 'Fire <b>💥 Burst ×4</b> on a full bucket (fine), then keep requesting without ticking (bounced).',
+          takeaway: 'Burst limit = bucket size; sustained limit = refill rate. Two knobs, not one.'
+        },
+        {
+          title: 'The compound capstone: LRU cache',
+          viz: { id: 'lru-cache' },
+          intro: 'And the expansion\'s thesis in one exhibit: a hash table (O(1) lookup) fused with a linked list ' +
+            '(O(1) recency order) makes a cache with O(1) everything. Elements → compound.',
+          try: 'Run the <b>▶ Auto demo</b> and watch which keys survive.',
+          takeaway: 'Real systems are compounds. Learn the elements and you can read any of them.'
+        }
+      ]
+    },
+
+    /* ------------------------------------------------------------------ */
+    {
       id: 'lesson-dp',
       title: 'Dynamic programming',
       blurb: 'Overlapping subproblems, memoization, and DP tables.',

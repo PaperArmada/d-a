@@ -1,5 +1,5 @@
 /* Service worker — cache-first for offline use. Bump CACHE on any asset change. */
-const CACHE = 'dsa-viz-v5';
+const CACHE = 'dsa-viz-v6';
 
 const ASSETS = [
   './',
@@ -34,6 +34,18 @@ const ASSETS = [
   './visualizations/circuit-breaker.js',
   './visualizations/token-bucket.js',
   './visualizations/git-dag.js',
+  './visualizations/utf8.js',
+  './visualizations/stack-heap.js',
+  './visualizations/bitwise.js',
+  './visualizations/gc-mark-sweep.js',
+  './visualizations/deadlock.js',
+  './visualizations/http-lifecycle.js',
+  './visualizations/consistent-hashing.js',
+  './visualizations/index-race.js',
+  './visualizations/myers-diff.js',
+  './visualizations/coupling.js',
+  './visualizations/invariants.js',
+  './visualizations/idempotency.js',
   './visualizations/sorting.js',
   './visualizations/sort-race.js',
   './visualizations/searching.js',
