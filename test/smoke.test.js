@@ -66,8 +66,32 @@ async function run() {
     assert(m.title && m.category && m.hasCreate, `viz "${m.id}" missing title/category/create`);
   });
 
+  // Categories start collapsed; expand all (persisted pref) to check parity.
+  await page.evaluate(() => {
+    localStorage.setItem('sf-expanded', JSON.stringify(window.Registry.grouped().map((g) => g.category)));
+  });
+  await page.reload();
+  await page.waitForTimeout(250);
   const navIds = await page.$$eval('.nav-item[data-id]', (els) => els.map((e) => e.dataset.id));
-  assert(navIds.length === ids.length, `sidebar shows ${navIds.length} items but registry has ${ids.length}`);
+  // +1: the pinned Ascent link duplicates the ascent entry (glossary is pinned-only).
+  assert(navIds.length >= ids.length, `sidebar shows ${navIds.length} items but registry has ${ids.length}`);
+  // Collapsed-by-default: fresh profile shows category headers but no item links.
+  const ctx2 = await browser.newContext();
+  const p2 = await ctx2.newPage();
+  await p2.goto(INDEX_URL);
+  await p2.waitForTimeout(250);
+  const fresh = await p2.evaluate(() => ({
+    cats: document.querySelectorAll('.cat__title--btn').length,
+    items: document.querySelectorAll('.cat .nav-item').length
+  }));
+  assert(fresh.cats >= 10, `fresh sidebar shows only ${fresh.cats} category headers`);
+  assert(fresh.items === 0, `fresh sidebar should start collapsed but shows ${fresh.items} items`);
+  // Navigating opens the active page's category automatically.
+  await p2.goto(INDEX_URL + '#/bst');
+  await p2.waitForTimeout(300);
+  const autoOpened = await p2.evaluate(() => !!document.querySelector('.cat .nav-item.active'));
+  assert(autoOpened, 'active category did not auto-expand for the current page');
+  await ctx2.close();
 
   console.log(`Registry: ${ids.length} visualizations — ${meta.map((m) => m.id).join(', ')}\n`);
 

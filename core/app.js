@@ -7,6 +7,7 @@
 
   let sidebar, main, current = null;
   let navItems = [];
+  const autoExpand = new Set();   // active page's category, opened transiently
 
   function init() {
     sidebar = document.getElementById('sidebar');
@@ -143,9 +144,11 @@
     sidebar.appendChild(el('a.nav-item', { href: '#/ascent', dataset: { id: 'ascent' } }, '🧗 The Ascent'));
     sidebar.appendChild(el('a.nav-item', { href: '#/glossary', dataset: { id: 'glossary' } }, '📖 Glossary'));
 
-    let collapsed;
-    try { collapsed = new Set(JSON.parse(localStorage.getItem('sf-collapsed') || '[]')); } catch (e) { collapsed = new Set(); }
-    function saveCollapsed() { try { localStorage.setItem('sf-collapsed', JSON.stringify([...collapsed])); } catch (e) {} }
+    // Categories start COLLAPSED; users expand what they want (persisted),
+    // and the active page's category auto-expands transiently.
+    let expanded;
+    try { expanded = new Set(JSON.parse(localStorage.getItem('sf-expanded') || '[]')); } catch (e) { expanded = new Set(); }
+    function saveExpanded() { try { localStorage.setItem('sf-expanded', JSON.stringify([...expanded])); } catch (e) {} }
 
     let shown = 0;
     let lastWing = null;
@@ -162,12 +165,14 @@
         sidebar.appendChild(el('div.wing-title', wing));
         lastWing = wing;
       }
-      const isCollapsed = collapsed.has(g.category) && !filter; // search always expands
+      // Open when: user expanded it, it's the active page's category, or searching.
+      const isCollapsed = !expanded.has(g.category) && !autoExpand.has(g.category) && !filter;
       const title = el('div.cat__title.cat__title--btn', {
         role: 'button', tabindex: '0', 'aria-expanded': String(!isCollapsed),
         onclick: function () {
-          if (collapsed.has(g.category)) collapsed.delete(g.category); else collapsed.add(g.category);
-          saveCollapsed(); buildSidebar(filter);
+          if (isCollapsed) expanded.add(g.category);
+          else { expanded.delete(g.category); autoExpand.delete(g.category); }
+          saveExpanded(); buildSidebar(filter);
         }
       }, [el('span.cat__caret', isCollapsed ? '▸' : '▾'), g.category + '  ', el('span.cat__count', String(items.length))]);
       const cat = el('div.cat', [title]);
@@ -186,7 +191,7 @@
     highlightActive();
   }
 
-  function highlightActive() {
+  function highlightActive(noRebuild) {
     const id = parseHash().id;
     let active = null;
     navItems.forEach((n) => {
@@ -198,6 +203,18 @@
       const pinned = sidebar && sidebar.querySelector('.nav-item[data-id="' + pid + '"]');
       if (pinned) pinned.classList.toggle('active', id === pid);
     });
+    // If the active page lives in a collapsed category, open that category
+    // (transiently) and rebuild once so the highlight is visible.
+    if (!active && !noRebuild && id) {
+      const def = Registry.get(id);
+      if (def && def.category && !autoExpand.has(def.category)) {
+        autoExpand.clear();
+        autoExpand.add(def.category);
+        const search = sidebar && sidebar.querySelector('.search');
+        buildSidebar(search ? search.value.trim().toLowerCase() : '');
+        return;
+      }
+    }
     if (active && active.scrollIntoView) active.scrollIntoView({ block: 'nearest' });
   }
 

@@ -1,5 +1,8 @@
-/* Service worker — cache-first for offline use. Bump CACHE on any asset change. */
-const CACHE = 'dsa-viz-v8';
+/* Service worker — NETWORK-FIRST with cache fallback.
+   Online users always get the latest deploy immediately (no double-refresh
+   dance); the cache exists purely so the app keeps working offline.
+   Bump CACHE on any asset change. */
+const CACHE = 'dsa-viz-v9';
 
 const ASSETS = [
   './',
@@ -83,17 +86,16 @@ self.addEventListener('activate', (e) => {
 
 self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET') return;
+  if (new URL(e.request.url).origin !== self.location.origin) return;
   e.respondWith(
-    caches.match(e.request).then((hit) => {
-      if (hit) return hit;
-      return fetch(e.request).then((res) => {
-        // cache same-origin successful responses for next time
-        if (res && res.ok && new URL(e.request.url).origin === self.location.origin) {
-          const copy = res.clone();
-          caches.open(CACHE).then((c) => c.put(e.request, copy));
-        }
-        return res;
-      }).catch(() => caches.match('./index.html'));
-    })
+    fetch(e.request).then((res) => {
+      if (res && res.ok) {
+        const copy = res.clone();
+        caches.open(CACHE).then((c) => c.put(e.request, copy));
+      }
+      return res;
+    }).catch(() =>
+      caches.match(e.request).then((hit) => hit || caches.match('./index.html'))
+    )
   );
 });
