@@ -50,5 +50,15 @@ jobs:
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site
+      # Pages occasionally throws a transient "Deployment failed, try again
+      # later." — retry twice before declaring the deploy dead.
       - id: deployment
+        uses: actions/deploy-pages@v4
+        continue-on-error: true
+      - id: deployment-retry
+        if: steps.deployment.outcome == 'failure'
+        uses: actions/deploy-pages@v4
+        continue-on-error: true
+      - id: deployment-retry-2
+        if: steps.deployment-retry.outcome == 'failure'
         uses: actions/deploy-pages@v4
