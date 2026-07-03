@@ -26,8 +26,24 @@
         const s = document.querySelector('.search'); if (s) { e.preventDefault(); s.focus(); }
       }
       if (e.key === 'Escape') closeSidebar();
+      // [ and ] page through visualizations in catalog order
+      if ((e.key === '[' || e.key === ']') && document.activeElement && document.activeElement.tagName !== 'INPUT') {
+        const id = parseHash().id;
+        if (!id) return;
+        const flat = flatOrder();
+        const i = flat.findIndex((d) => d.id === id);
+        if (i < 0) return;
+        const next = e.key === ']' ? flat[i + 1] : flat[i - 1];
+        if (next) location.hash = '#/' + next.id;
+      }
     });
     route();
+  }
+
+  function flatOrder() {
+    const out = [];
+    Registry.grouped().forEach((g) => g.items.forEach((it) => out.push(it)));
+    return out;
   }
 
   function isEmbed() {
@@ -124,10 +140,16 @@
     if (filter) setTimeout(() => { search.focus(); search.selectionStart = search.value.length; }, 0);
 
     sidebar.appendChild(el('a.nav-item', { href: '#/' }, '🏠 Home'));
+    sidebar.appendChild(el('a.nav-item', { href: '#/glossary', dataset: { id: 'glossary' } }, '📖 Glossary'));
+
+    let collapsed;
+    try { collapsed = new Set(JSON.parse(localStorage.getItem('sf-collapsed') || '[]')); } catch (e) { collapsed = new Set(); }
+    function saveCollapsed() { try { localStorage.setItem('sf-collapsed', JSON.stringify([...collapsed])); } catch (e) {} }
 
     let shown = 0;
     let lastWing = null;
     Registry.grouped().forEach(function (g) {
+      if (g.category === 'Reference') return; // Glossary has its own pinned link above
       const items = g.items.filter(function (it) {
         if (!filter) return true;
         return (it.title + ' ' + it.blurb + ' ' + it.category).toLowerCase().indexOf(filter) >= 0;
@@ -139,13 +161,23 @@
         sidebar.appendChild(el('div.wing-title', wing));
         lastWing = wing;
       }
-      const cat = el('div.cat', [el('div.cat__title', g.category)]);
-      items.forEach(function (it) {
-        cat.appendChild(el('a.nav-item', { href: '#/' + it.id, dataset: { id: it.id } }, [
-          it.title, el('span.nav-item__blurb', it.blurb)
-        ]));
-        navItems.push(cat.lastChild);
-      });
+      const isCollapsed = collapsed.has(g.category) && !filter; // search always expands
+      const title = el('div.cat__title.cat__title--btn', {
+        role: 'button', tabindex: '0', 'aria-expanded': String(!isCollapsed),
+        onclick: function () {
+          if (collapsed.has(g.category)) collapsed.delete(g.category); else collapsed.add(g.category);
+          saveCollapsed(); buildSidebar(filter);
+        }
+      }, [el('span.cat__caret', isCollapsed ? '▸' : '▾'), g.category + '  ', el('span.cat__count', String(items.length))]);
+      const cat = el('div.cat', [title]);
+      if (!isCollapsed) {
+        items.forEach(function (it) {
+          cat.appendChild(el('a.nav-item', { href: '#/' + it.id, dataset: { id: it.id } }, [
+            it.title, el('span.nav-item__blurb', it.blurb)
+          ]));
+          navItems.push(cat.lastChild);
+        });
+      }
       sidebar.appendChild(cat);
     });
 
@@ -155,7 +187,15 @@
 
   function highlightActive() {
     const id = parseHash().id;
-    navItems.forEach((n) => n.classList.toggle('active', n.dataset.id === id));
+    let active = null;
+    navItems.forEach((n) => {
+      const is = n.dataset.id === id;
+      n.classList.toggle('active', is);
+      if (is) active = n;
+    });
+    const pinned = sidebar && sidebar.querySelector('.nav-item[data-id="glossary"]');
+    if (pinned) pinned.classList.toggle('active', id === 'glossary');
+    if (active && active.scrollIntoView) active.scrollIntoView({ block: 'nearest' });
   }
 
   // ---- Route -------------------------------------------------------------
@@ -169,9 +209,16 @@
     const def = Registry.get(id);
     if (!def) { renderLanding(); highlightActive(); return; }
 
+    const wing = Registry.wingOf(def.category);
     main.appendChild(el('div.main__header', [
+      el('div.crumbs', [
+        el('a', { href: '#/' }, 'Home'), el('span.crumbs__sep', '›'),
+        el('span', wing === 'Learn' ? 'Learn' : wing), el('span.crumbs__sep', '›'),
+        el('span', def.category), el('span.crumbs__sep', '›'),
+        el('span.crumbs__here', def.title)
+      ]),
       el('h2', def.title),
-      el('p', def.longDesc || def.blurb)
+      el('p', { html: window.Glossary ? window.Glossary.linkify(def.longDesc || def.blurb) : (def.longDesc || def.blurb) })
     ]));
     const host = el('div.viz-host');
     main.appendChild(host);
@@ -181,8 +228,36 @@
       host.appendChild(el('div.status', 'Error creating visualization: ' + e.message));
       console.error(e);
     }
+    appendRelated(def);
+    appendPager(def);
     highlightActive();
     main.scrollTop = 0;
+  }
+
+  // "Built from" (madeOf) + "Used by" (reverse madeOf) concept links.
+  function appendRelated(def) {
+    const builtFrom = (def.madeOf || []).map((id) => Registry.get(id)).filter(Boolean);
+    const usedBy = Registry.all().filter((d) => (d.madeOf || []).indexOf(def.id) >= 0);
+    if (!builtFrom.length && !usedBy.length) return;
+    const chips = (list) => list.map((d) => el('a.pill.related__chip', { href: '#/' + d.id }, d.title));
+    const row = el('div.related');
+    if (builtFrom.length) row.appendChild(el('div.related__group', [el('span.related__label', '⚗ built from'), ...chips(builtFrom)]));
+    if (usedBy.length) row.appendChild(el('div.related__group', [el('span.related__label', '→ used by'), ...chips(usedBy)]));
+    main.appendChild(row);
+  }
+
+  function appendPager(def) {
+    const flat = flatOrder();
+    const i = flat.findIndex((d) => d.id === def.id);
+    if (i < 0) return;
+    const prev = flat[i - 1], next = flat[i + 1];
+    main.appendChild(el('div.pager', [
+      prev ? el('a.pager__link.pager__prev', { href: '#/' + prev.id }, [
+        el('span.pager__dir', '← previous'), el('span.pager__title', prev.title)]) : el('span'),
+      el('span.pager__hint.mono.dim', '[ and ] keys work too'),
+      next ? el('a.pager__link.pager__next', { href: '#/' + next.id }, [
+        el('span.pager__dir', 'next →'), el('span.pager__title', next.title)]) : el('span')
+    ]));
   }
 
   function renderLanding() {

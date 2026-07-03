@@ -550,6 +550,24 @@
         const prose = el('div.lesson-prose');
         const vizHost = el('div.lesson-viz');
 
+        // Terms up front: scan the whole lesson's text once and present the
+        // jargon it will use as tappable definitions BEFORE the reading starts.
+        let termStrip = null;
+        if (window.Glossary) {
+          const all = new Set();
+          def.steps.forEach(function (s) {
+            const blob = [].concat(s.intro || [], s.points || [], s.watch || '', s.try || '', s.takeaway || '').join(' ');
+            window.Glossary.termsIn(blob).forEach((t) => all.add(t));
+          });
+          if (all.size) {
+            termStrip = el('div.lesson-terms', [
+              el('span.lesson-terms__label', '📖 Terms you\'ll meet — tap any for a plain-English definition:'),
+              ...[...all].sort().map((t) =>
+                el('span.gloss.lesson-terms__chip', { tabindex: '0', role: 'button', dataset: { term: t } }, t))
+            ]);
+          }
+        }
+
         const prev = el('button.btn', { onclick: () => go(idx - 1) }, '← Prev');
         const next = el('button.btn.btn--primary', { onclick: () => go(idx + 1) }, 'Next →');
         const dots = el('div.lesson-dots');
@@ -557,6 +575,7 @@
         const nav = el('div.controls', [prev, next, el('span.spacer'), dots, counter]);
 
         container.appendChild(nav);
+        if (termStrip) container.appendChild(termStrip);
         container.appendChild(prose);
         container.appendChild(vizHost);
 
@@ -569,20 +588,25 @@
           });
         }
 
+        // One "seen" set per step: each jargon term gets underlined at its
+        // first appearance in the step, with a plain-English tooltip.
+        let seenTerms = new Set();
+        const gl = (html) => (window.Glossary ? window.Glossary.linkify(html, seenTerms) : html);
         function paras(x) {
           const arr = Array.isArray(x) ? x : [x];
-          return arr.map((p) => el('p.lesson-para', { html: p }));
+          return arr.map((p) => el('p.lesson-para', { html: gl(p) }));
         }
         function callout(kind, label, html) {
           return el('div.lesson-callout.' + kind, [
             el('span.lesson-callout__label', label),
-            el('span', { html: html })
+            el('span', { html: gl(html) })
           ]);
         }
 
         function go(i) {
           if (i < 0 || i >= total) return;
           idx = i;
+          seenTerms = new Set();
           if (mounted && mounted.destroy) { try { mounted.destroy(); } catch (e) {} }
           mounted = null;
           const step = def.steps[idx];

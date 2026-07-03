@@ -6,7 +6,7 @@
   const byId = {};
 
   const CATEGORY_ORDER = [
-    'Lessons',
+    'Lessons', 'Reference',
     // Software Foundations wing
     'The Machine', 'Runtime', 'Design Patterns', 'Data & Storage', 'Systems', 'Craft',
     // Algorithms & Data Structures wing
@@ -15,7 +15,7 @@
   ];
 
   const WING_OF = {
-    'Lessons': 'Learn',
+    'Lessons': 'Learn', 'Reference': 'Learn',
     'The Machine': 'Software Foundations', 'Runtime': 'Software Foundations',
     'Design Patterns': 'Software Foundations', 'Data & Storage': 'Software Foundations',
     'Systems': 'Software Foundations', 'Craft': 'Software Foundations',

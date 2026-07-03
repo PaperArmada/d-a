@@ -100,6 +100,53 @@ async function run() {
   }).catch((e) => ['logic harness error: ' + e.message]);
   logic.forEach((msg) => failures.push('logic: ' + msg));
   console.log(logic.length ? `Logic checks: ${logic.length} FAILED` : 'Logic checks: sorts sorted + permutations, searches correct ✓');
+
+  // ---- Glossary & navigation QoL checks -----------------------------------
+  const glossProblems = await page.evaluate(() => {
+    const out = window.Glossary.verify();
+    // linkify produces spans and every produced term resolves
+    const html = window.Glossary.linkify('The call stack uses recursion and a queue with big-O costs.');
+    if ((html.match(/class="gloss"/g) || []).length < 3) out.push('linkify produced too few terms');
+    (html.match(/data-term="([^"]+)"/g) || []).forEach((m) => {
+      const t = m.slice(11, -1);
+      if (!window.Glossary.TERMS[t]) out.push('linkify produced unknown term: ' + t);
+    });
+    return out;
+  }).catch((e) => ['glossary harness error: ' + e.message]);
+  glossProblems.forEach((p) => failures.push('glossary: ' + p));
+
+  // Glossary page renders entries; lesson pages get term strips + gloss spans;
+  // viz pages get breadcrumbs and a pager.
+  await page.goto(INDEX_URL + '#/glossary');
+  await page.waitForTimeout(200);
+  const gcount = await page.$$eval('.gloss-entry', (e) => e.length).catch(() => 0);
+  assert(gcount >= 40, `glossary page shows only ${gcount} entries`);
+
+  await page.goto(INDEX_URL + '#/lesson-systems');
+  await page.waitForTimeout(300);
+  const lessonQoL = await page.evaluate(() => ({
+    strip: document.querySelectorAll('.lesson-terms .gloss').length,
+    inline: document.querySelectorAll('.lesson-prose .gloss').length,
+    badTerms: [...document.querySelectorAll('.gloss')].map((g) => g.dataset.term)
+      .filter((t) => !window.Glossary.TERMS[t])
+  }));
+  assert(lessonQoL.strip >= 5, `lesson term strip has only ${lessonQoL.strip} chips`);
+  assert(lessonQoL.inline >= 2, `lesson prose has only ${lessonQoL.inline} inline gloss links`);
+  assert(!lessonQoL.badTerms.length, `lesson uses unknown glossary terms: ${lessonQoL.badTerms.join(', ')}`);
+
+  await page.goto(INDEX_URL + '#/lru-cache');
+  await page.waitForTimeout(200);
+  const nav = await page.evaluate(() => ({
+    crumbs: !!document.querySelector('.crumbs'),
+    pager: document.querySelectorAll('.pager__link').length,
+    related: !!document.querySelector('.related'),
+    headerGloss: document.querySelectorAll('.main__header .gloss').length
+  }));
+  assert(nav.crumbs, 'breadcrumbs missing on viz page');
+  assert(nav.pager >= 1, 'pager missing on viz page');
+  assert(nav.related, 'related (built from / used by) panel missing on lru-cache');
+  assert(nav.headerGloss >= 1, 'viz description has no glossary links');
+  console.log((glossProblems.length ? 'Glossary: FAILED' : 'Glossary: definitions verified, linkify OK, page + strips + pager + crumbs present ✓'));
   console.log('');
 
   // ---- Per-visualization checks ------------------------------------------
@@ -110,7 +157,7 @@ async function run() {
 
     const rendered = await page.evaluate(() => {
       const host = document.querySelector('.viz-host');
-      return !!host && !!host.querySelector('.stage, svg, table, .grid');
+      return !!host && !!host.querySelector('.stage, svg, table, .grid, .gloss-entry');
     });
     assert(rendered, `[${m.id}] nothing rendered`);
 
