@@ -557,6 +557,47 @@ input[type="range"]::-moz-range-thumb { width: 14px; height: 14px; border-radius
   padding: 3px 11px; font-size: 12.5px; text-decoration-thickness: 1px;
 }
 
+/* ---- The Ascent ---- */
+.hero-ctas { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+.hero-cta:hover { text-decoration: none; }
+
+.ascent-progress { display: flex; align-items: center; gap: 14px; max-width: 900px; margin-bottom: 26px; }
+.ascent-progress__bar { flex: 1; height: 8px; border-radius: 6px; background: var(--panel-2); border: 1px solid var(--border); overflow: hidden; }
+.ascent-progress__fill { height: 100%; border-radius: 6px; background: linear-gradient(90deg, var(--accent), var(--accent-2)); transition: width .4s var(--ease); }
+
+.ascent-band { position: relative; padding-left: 26px; margin-bottom: 30px; max-width: 1100px; }
+.ascent-band::before {
+  content: ''; position: absolute; left: 7px; top: 6px; bottom: -30px; width: 3px; border-radius: 2px;
+  background: linear-gradient(180deg, var(--accent-2), var(--accent));
+  opacity: .55;
+}
+.ascent-band:last-of-type::before { bottom: 6px; }
+.ascent-band::after {
+  content: ''; position: absolute; left: 1px; top: 4px; width: 15px; height: 15px; border-radius: 50%;
+  background: var(--accent-2); border: 3px solid var(--bg);
+}
+.ascent-band__head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+.ascent-band__tier {
+  font-family: var(--mono); font-size: 11px; font-weight: 700; letter-spacing: .5px;
+  color: var(--accent-2); background: color-mix(in srgb, var(--accent-2) 14%, transparent);
+  padding: 3px 10px; border-radius: 999px;
+}
+.ascent-band__name { font-size: 17px; font-weight: 700; color: var(--text); }
+.ascent-band__blurb { font-size: 12.5px; color: var(--text-dim); }
+.ascent-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(215px, 1fr)); gap: 10px; }
+.ascent-card {
+  display: block; background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 11px 13px; color: var(--text);
+  transition: border-color .15s var(--ease), transform .1s var(--ease);
+}
+.ascent-card:hover { border-color: var(--accent); text-decoration: none; transform: translateY(-2px); }
+.ascent-card.visited { border-color: color-mix(in srgb, var(--good) 45%, var(--border)); }
+.ascent-card__top { display: flex; justify-content: space-between; align-items: baseline; }
+.ascent-card__tick { color: var(--good); font-weight: 800; }
+.ascent-card__title { font-weight: 650; font-size: 14px; margin: 3px 0 5px; }
+.ascent-card__deps { font-size: 11px; color: var(--accent-2); line-height: 1.45; }
+.ascent-card__deps--elem { color: var(--text-dim); font-style: italic; }
+
 /* ---- Wings (two-level navigation) ---- */
 .wing-title {
   margin: 18px 8px 4px; padding-top: 12px;

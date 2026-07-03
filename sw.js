@@ -1,5 +1,5 @@
 /* Service worker — cache-first for offline use. Bump CACHE on any asset change. */
-const CACHE = 'dsa-viz-v7';
+const CACHE = 'dsa-viz-v8';
 
 const ASSETS = [
   './',
@@ -15,6 +15,7 @@ const ASSETS = [
   './core/registry.js',
   './core/share.js',
   './core/glossary.js',
+  './core/ascent.js',
   './core/lessons.js',
   './core/app.js',
   './visualizations/binary-rep.js',

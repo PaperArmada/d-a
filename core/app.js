@@ -140,6 +140,7 @@
     if (filter) setTimeout(() => { search.focus(); search.selectionStart = search.value.length; }, 0);
 
     sidebar.appendChild(el('a.nav-item', { href: '#/' }, '🏠 Home'));
+    sidebar.appendChild(el('a.nav-item', { href: '#/ascent', dataset: { id: 'ascent' } }, '🧗 The Ascent'));
     sidebar.appendChild(el('a.nav-item', { href: '#/glossary', dataset: { id: 'glossary' } }, '📖 Glossary'));
 
     let collapsed;
@@ -193,8 +194,10 @@
       n.classList.toggle('active', is);
       if (is) active = n;
     });
-    const pinned = sidebar && sidebar.querySelector('.nav-item[data-id="glossary"]');
-    if (pinned) pinned.classList.toggle('active', id === 'glossary');
+    ['glossary', 'ascent'].forEach(function (pid) {
+      const pinned = sidebar && sidebar.querySelector('.nav-item[data-id="' + pid + '"]');
+      if (pinned) pinned.classList.toggle('active', id === pid);
+    });
     if (active && active.scrollIntoView) active.scrollIntoView({ block: 'nearest' });
   }
 
@@ -220,6 +223,11 @@
       el('h2', def.title),
       el('p', { html: window.Glossary ? window.Glossary.linkify(def.longDesc || def.blurb) : (def.longDesc || def.blurb) })
     ]));
+    // Progress memory: the Ascent ticks pages you've opened.
+    try {
+      const seen = new Set(JSON.parse(localStorage.getItem('sf-visited') || '[]'));
+      if (!seen.has(id)) { seen.add(id); localStorage.setItem('sf-visited', JSON.stringify([...seen])); }
+    } catch (e) {}
     const host = el('div.viz-host');
     main.appendChild(host);
     try {
@@ -266,7 +274,12 @@
       el('p', 'Step through the concrete mechanisms of software 1.0: algorithms and data structures, ' +
               'design patterns, runtime internals, memory & number representation, protocols, and storage. ' +
               'Elements are atomic concepts; compounds are built from them. ' +
-              'Keyboard: Space = play/pause, ← / → = step, “/” = search.')
+              'Keyboard: Space = play/pause, ← / → = step, “/” = search.'),
+      el('div.hero-ctas', [
+        el('a.btn.btn--primary.hero-cta', { href: '#/ascent' }, '🧗 Start the Ascent — elements first, then upward'),
+        el('a.btn.hero-cta', { href: '#/lesson-sorting' }, '🎓 Or begin with a guided lesson'),
+        el('a.btn.btn--ghost.hero-cta', { href: '#/glossary' }, '📖 Glossary')
+      ])
     ]));
     let lastWing = null;
     Registry.grouped().forEach(function (g) {

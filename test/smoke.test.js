@@ -134,6 +134,22 @@ async function run() {
   assert(lessonQoL.inline >= 2, `lesson prose has only ${lessonQoL.inline} inline gloss links`);
   assert(!lessonQoL.badTerms.length, `lesson uses unknown glossary terms: ${lessonQoL.badTerms.join(', ')}`);
 
+  // Ascent: ordering must be acyclic and tier-monotonic; page must render bands.
+  const ascentProblems = await page.evaluate(() => window.Ascent.verify())
+    .catch((e) => ['ascent harness error: ' + e.message]);
+  ascentProblems.forEach((p) => failures.push('ascent: ' + p));
+  await page.goto(INDEX_URL + '#/ascent');
+  await page.waitForTimeout(250);
+  const asc = await page.evaluate(() => ({
+    bands: document.querySelectorAll('.ascent-band').length,
+    cards: document.querySelectorAll('.ascent-card').length,
+    elements: document.querySelectorAll('.ascent-card__deps--elem').length
+  }));
+  assert(asc.bands >= 4, `ascent has only ${asc.bands} tiers`);
+  assert(asc.cards >= 50, `ascent shows only ${asc.cards} cards`);
+  assert(asc.elements >= 5, `ascent base camp has only ${asc.elements} elements`);
+  console.log(ascentProblems.length ? 'Ascent: FAILED' : `Ascent: ${asc.bands} tiers over ${asc.cards} entries, ordering verified ✓`);
+
   await page.goto(INDEX_URL + '#/lru-cache');
   await page.waitForTimeout(200);
   const nav = await page.evaluate(() => ({
@@ -157,7 +173,7 @@ async function run() {
 
     const rendered = await page.evaluate(() => {
       const host = document.querySelector('.viz-host');
-      return !!host && !!host.querySelector('.stage, svg, table, .grid, .gloss-entry');
+      return !!host && !!host.querySelector('.stage, svg, table, .grid, .gloss-entry, .ascent-band');
     });
     assert(rendered, `[${m.id}] nothing rendered`);
 
