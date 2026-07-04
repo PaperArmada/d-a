@@ -88,8 +88,11 @@
       container.appendChild(el('div.complexity', [
         el('span.pill', [el('b', 'Undo/redo: '), 'O(1) stack ops']),
         el('span.pill', [el('b', 'Command carries: '), 'apply() + revert()']),
-        el('span.pill', [el('b', 'Bonus: '), 'same objects give you macros, queues, audit logs'])
+        el('span.pill', [el('b', 'In the wild: '), 'editors · database migrations · transactional UIs'])
       ]));
+      container.appendChild(el('p.hint',
+        'Once every change is an object, undo is only the first prize: the same objects can be queued, ' +
+        'batched into macros, or written to an audit log — new powers with no new machinery.'));
       render();
       setStatus('Run a few commands, then undo/redo. Watch what a NEW command does to the redo stack.');
       return {};

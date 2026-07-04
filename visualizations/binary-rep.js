@@ -89,9 +89,11 @@
       container.appendChild(stage);
       container.appendChild(el('div.complexity', [
         el('span.pill', [el('b', 'Range (8-bit signed): '), '−128 … 127']),
-        el('span.pill', [el('b', 'Negate: '), '~x + 1']),
-        el('span.pill', [el('b', 'Why: '), 'one adder circuit serves + and −'])
+        el('span.pill', [el('b', 'Negate: '), '~x + 1'])
       ]));
+      container.appendChild(el('p.hint',
+        'Two\'s complement is shaped this way for one reason: it lets a single adder circuit serve both ' +
+        '+ and −. Subtraction is just addition with a negated operand — no second circuit, no special cases.'));
       render();
       setStatus('Click bits to flip them. Try <b>Load 127</b> then <b>＋1</b> to fall off the cliff.');
       return {};

@@ -99,9 +99,11 @@
       container.appendChild(stage);
       container.appendChild(el('div.complexity', [
         el('span.pill', [el('b', 'Layout: '), '1 + 8 + 23 bits']),
-        el('span.pill', [el('b', 'Value: '), '± 1.mantissa × 2^(exp−127)']),
-        el('span.pill', [el('b', 'Lesson: '), 'the error exists at parse time'])
+        el('span.pill', [el('b', 'Value: '), '± 1.mantissa × 2^(exp−127)'])
       ]));
+      container.appendChild(el('p.hint',
+        'The famous 0.1 + 0.2 surprise is not an arithmetic bug — the error already exists at parse time. ' +
+        '0.1 simply has no exact binary form, the same way ⅓ has no exact decimal one.'));
       load(0.1);
       return {};
     }

@@ -364,17 +364,24 @@ async function run() {
     });
     assert(rendered, `[${m.id}] nothing rendered`);
 
-    // Style-guide conformance (docs/DEMOS.md) for catalog demos:
-    // a narrating status line exists, and no pill hand-declares atlas
-    // relationships ("Used by:") — that's the relations layer's job.
+    // Style-guide conformance (docs/DEMOS.md) for catalog demos: a narrating
+    // status line exists; pills use the closed vocabulary (no morals, no
+    // hand-made atlas relationships); "In the wild:" is the last pill.
     if (m.category !== 'Lessons' && m.category !== 'Reference') {
-      const anatomy = await page.evaluate(() => ({
-        status: !!document.querySelector('.viz-host .status'),
-        badPills: [...document.querySelectorAll('.viz-host .pill')]
-          .map((p) => p.textContent.trim()).filter((t) => /^used by/i.test(t))
-      }));
+      const anatomy = await page.evaluate(() => {
+        const pills = [...document.querySelectorAll('.viz-host .complexity .pill')]
+          .map((p) => p.textContent.trim());
+        const BANNED = /^(used by|compound of|pairs with|everywhere|see also|why|lesson|takeaway|bonus|same idea|in practice|refactor goal|vs )/i;
+        const wildIdx = pills.findIndex((t) => /^in the wild/i.test(t));
+        return {
+          status: !!document.querySelector('.viz-host .status'),
+          badPills: pills.filter((t) => BANNED.test(t)),
+          wildNotLast: wildIdx >= 0 && wildIdx !== pills.length - 1
+        };
+      });
       assert(anatomy.status, `[${m.id}] missing status line (docs/DEMOS.md anatomy)`);
-      assert(!anatomy.badPills.length, `[${m.id}] relationship pill belongs in the relations layer: "${anatomy.badPills[0]}"`);
+      assert(!anatomy.badPills.length, `[${m.id}] pill outside the closed vocabulary (docs/DEMOS.md): "${anatomy.badPills[0]}"`);
+      assert(!anatomy.wildNotLast, `[${m.id}] "In the wild:" pill must be the last pill`);
     }
 
     // Player step: click the Step-forward button and confirm the progress

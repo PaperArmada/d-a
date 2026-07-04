@@ -20,16 +20,30 @@ The app shell provides 1, 8 and 9; the demo's `create()` provides the rest.
    (policy since the Queue feedback note). Frame-based demos highlight the
    executing line; button-driven demos light up the clicked operation's line.
 6. **Legend** — required as soon as the stage uses more than one state color.
-7. **Complexity pills** — costs and properties of *this mechanism only*:
-   `Time`, `Space`, invariants ("exactly one current state"), practice notes.
-   - `In the wild:` is the label for real-world sightings (products,
-     protocols) — things that are *not pages in this atlas*.
-   - **Never** put atlas relationships in pills. "Built on" and "leads to"
-     are the relations layer's job — generated from the ingredient graph,
-     with rationales — and duplicating them by hand goes stale and confuses
-     the layering. (The harness rejects `Used by:` pills for this reason:
-     if it's an atlas page, it belongs in the graph; if it's a product,
-     write `In the wild:`.)
+7. **Complexity pills** — a spec sheet with a **closed vocabulary**. A pill
+   is exactly one of four kinds, in this order:
+   1. **Cost** — labeled by the operation, value is a cost
+      (`Insert: O(log n)`, `Cost: 1 cycle, no loops`).
+   2. **Property** — a measurable/definitional fact of the mechanism
+      (`Layout: 1 + 8 + 23 bits`, `Burst capacity: bucket size`,
+      `Command carries: apply() + revert()`).
+   3. **Invariant** — labeled exactly `Invariant:`
+      (`Invariant: exactly one current state`).
+   4. **In the wild** — labeled exactly `In the wild:`, always the **last**
+      pill; real-world sightings (products, protocols) that are *not pages
+      in this atlas*.
+
+   Nothing else is a pill:
+   - **Morals, takeaways, comparisons** (`Lesson:`, `Takeaway:`, `Why:`,
+     `Bonus:`, `Same idea:`, `vs …`) belong in the closing **hint** — that's
+     what it's for.
+   - **Atlas relationships** (`Used by:`, `Compound of:`, `Pairs with:`,
+     `Everywhere in:`) belong in the ingredient graph; the relations layer
+     renders them with rationales. If it's a product, it's `In the wild:`.
+
+   The harness rejects the banned labels and enforces `In the wild:` last —
+   so a reader always knows what a pill row holds: what it costs, what it
+   carries, what's always true, where it lives in the real world.
 8. **Hint** — one closing paragraph telling the story the stage just showed
    ("the nodes never move — only arrows change").
 9. **Relations + pager** — "⚗ built on / → leads to" chips with rationales,

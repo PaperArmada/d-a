@@ -99,8 +99,11 @@
       container.appendChild(stage);
       container.appendChild(el('div.complexity', [
         el('span.pill', [el('b', 'Open state cost: '), 'O(1) fast-fail, zero load on the dependency']),
-        el('span.pill', [el('b', 'Pairs with: '), 'retries + exponential backoff + jitter'])
+        el('span.pill', [el('b', 'In the wild: '), 'service meshes · payment gateways · API clients'])
       ]));
+      container.appendChild(el('p.hint',
+        'In production the breaker works alongside retries, exponential backoff and jitter — retries are ' +
+        'what cause the thundering herd; the breaker is the thing that finally says "stop calling, let it heal."'));
       render();
       setStatus('Fail three requests to trip it, tick the clock, then probe.');
       return {};

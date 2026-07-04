@@ -80,7 +80,7 @@
       container.appendChild(el('div.complexity', [
         el('span.pill', [el('b', 'Notify: '), 'O(subscribers)']),
         el('span.pill', [el('b', 'Coupling: '), 'subject knows an interface, not the listeners']),
-        el('span.pill', [el('b', 'Everywhere in: '), 'DOM events · signals · message buses'])
+        el('span.pill', [el('b', 'In the wild: '), 'DOM events · signals · message buses'])
       ]));
       render();
       setStatus('Three subscribers active, one detached. Publish to see the fan-out.');

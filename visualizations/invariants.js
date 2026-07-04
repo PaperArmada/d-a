@@ -88,8 +88,11 @@
       container.appendChild(el('div.complexity', [
         el('span.pill', [el('b', 'Assertion: '), 'executable documentation']),
         el('span.pill', [el('b', 'Fails: '), 'at the cause, not the symptom']),
-        el('span.pill', [el('b', 'Same idea: '), 'heap property · loop invariants · DB constraints'])
+        el('span.pill', [el('b', 'In the wild: '), 'assert() · database constraints · type checkers'])
       ]));
+      container.appendChild(el('p.hint',
+        'Once you see the move, it\'s everywhere: the heap property, loop invariants in proofs, foreign-key ' +
+        'constraints — declare what must always be true, then let any violation announce itself immediately.'));
       render();
       setStatus('The invariant holds. Now press 🐛 and watch the checker name the culprit.');
       return {};

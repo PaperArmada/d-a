@@ -80,9 +80,11 @@
         el('span', [el('span.swatch', { style: { background: 'var(--good)' } }), 'Merge sort (measured)'])
       ]));
       container.appendChild(el('div.complexity', [
-        el('span.pill', [el('b', 'Takeaway: '), 'constants wiggle, growth curves don\'t']),
         el('span.pill', [el('b', 'At n=56: '), 'quadratic ≈ 10× the n log n work'])
       ]));
+      container.appendChild(el('p.hint',
+        'Constants wiggle — a faster machine or a lucky input shifts every dot. Growth curves don\'t. ' +
+        'That\'s why algorithms are judged by the shape of their curve, not by milliseconds.'));
       render();
       setStatus('Dots = real measured comparisons from this app\'s own sort engines. Dashed = theory.');
       return {};

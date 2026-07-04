@@ -98,7 +98,7 @@
       container.appendChild(stage);
       container.appendChild(el('div.complexity', [
         el('span.pill', [el('b', 'Get / Put / Evict: '), 'O(1)']),
-        el('span.pill', [el('b', 'Compound of: '), 'Hash Table + Linked List'])
+        el('span.pill', [el('b', 'In the wild: '), 'CPU caches · Redis maxmemory-lru · browser caches'])
       ]));
       ['A', 'B', 'C'].forEach(doPut);
       render();

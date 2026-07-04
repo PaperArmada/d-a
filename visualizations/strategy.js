@@ -78,9 +78,11 @@
       container.appendChild(stage);
       container.appendChild(el('div.complexity', [
         el('span.pill', [el('b', 'Interface: '), 'sort(array) → array']),
-        el('span.pill', [el('b', 'Swap cost: '), 'one assignment']),
-        el('span.pill', [el('b', 'vs if/else chains: '), 'open for extension, closed for modification'])
+        el('span.pill', [el('b', 'Swap cost: '), 'one assignment'])
       ]));
+      container.appendChild(el('p.hint',
+        'Compare this to an if/else chain over algorithm names: adding a new strategy here means adding ' +
+        'a new object, not editing working code — open for extension, closed for modification.'));
       render(false);
       setStatus('Pick a strategy and run the same workload. Compare the cost pills that accumulate.');
       return {};

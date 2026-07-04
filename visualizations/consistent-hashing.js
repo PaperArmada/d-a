@@ -107,8 +107,7 @@
       container.appendChild(stage);
       container.appendChild(el('div.complexity', [
         el('span.pill', [el('b', 'Keys moved on resize: '), '≈ K/N (vs ≈ K for mod-N)']),
-        el('span.pill', [el('b', 'In the wild: '), 'memcached rings · DynamoDB · CDNs']),
-        el('span.pill', [el('b', 'In practice: '), 'virtual nodes smooth the arcs'])
+        el('span.pill', [el('b', 'In the wild: '), 'memcached rings · DynamoDB · CDNs'])
       ]));
       render();
       setStatus('12 keys on 3 nodes. Add a node and count how few keys re-home.');

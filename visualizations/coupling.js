@@ -92,9 +92,11 @@
       container.appendChild(stage);
       container.appendChild(el('div.complexity', [
         el('span.pill', [el('b', 'Coupling: '), 'edges between modules']),
-        el('span.pill', [el('b', 'Blast radius: '), 'transitive dependents']),
-        el('span.pill', [el('b', 'Refactor goal: '), 'same features, smaller ripples'])
+        el('span.pill', [el('b', 'Blast radius: '), 'transitive dependents'])
       ]));
+      container.appendChild(el('p.hint',
+        'The refactoring goal is not fewer features — it\'s the same features with smaller ripples. ' +
+        'Every edge you cut is a place where a change stops traveling.'));
       render();
       setStatus('Click <b>DB</b> in each design and compare the blast radius.');
       return {};
