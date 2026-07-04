@@ -517,11 +517,24 @@ input[type="range"]::-moz-range-thumb { width: 14px; height: 14px; border-radius
 .related__group { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .related__label { font-size: 11.5px; text-transform: uppercase; letter-spacing: .8px; color: var(--accent-2); font-weight: 700; }
 .related__chip:hover { border-color: var(--accent); text-decoration: none; }
+.related__chip--unseen { border-style: dashed; }
+.related__chip--unseen::before { content: '○ '; color: var(--accent-2); }
 
 .cat__title--btn { cursor: pointer; display: flex; align-items: center; gap: 6px; border-radius: var(--radius-sm); }
 .cat__title--btn:hover { color: var(--text); background: var(--panel); }
 .cat__caret { width: 12px; display: inline-block; color: var(--accent); }
 .cat__count { color: var(--text-dim); font-weight: 400; opacity: .7; }
+
+/* Sidebar view tabs: the Climb (primary) vs Categories (secondary index) */
+.nav-tabs { display: flex; gap: 4px; margin: 10px 4px 6px; padding: 3px; border-radius: var(--radius-sm); background: var(--panel-2); border: 1px solid var(--border); }
+.nav-tab {
+  flex: 1; padding: 5px 6px; border: 0; border-radius: calc(var(--radius-sm) - 2px);
+  background: transparent; color: var(--text-dim); font: inherit; font-size: 12px; font-weight: 600;
+  cursor: pointer; transition: background .15s var(--ease), color .15s var(--ease);
+}
+.nav-tab:hover { color: var(--text); }
+.nav-tab.active { background: var(--panel); color: var(--text); box-shadow: 0 1px 3px rgba(0,0,0,.25); }
+.nav-item__tick { color: var(--accent-2); font-weight: 700; }
 
 /* ---- Glossary ---- */
 .gloss {
@@ -561,7 +574,8 @@ input[type="range"]::-moz-range-thumb { width: 14px; height: 14px; border-radius
 .hero-ctas { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
 .hero-cta:hover { text-decoration: none; }
 
-.ascent-progress { display: flex; align-items: center; gap: 14px; max-width: 900px; margin-bottom: 26px; }
+.ascent-progress { display: flex; align-items: center; gap: 14px; max-width: 1100px; margin-bottom: 26px; flex-wrap: wrap; }
+.ascent-cta { white-space: nowrap; }
 .ascent-progress__bar { flex: 1; height: 8px; border-radius: 6px; background: var(--panel-2); border: 1px solid var(--border); overflow: hidden; }
 .ascent-progress__fill { height: 100%; border-radius: 6px; background: linear-gradient(90deg, var(--accent), var(--accent-2)); transition: width .4s var(--ease); }
 

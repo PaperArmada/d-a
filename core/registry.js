@@ -25,6 +25,12 @@
     'Graphs': 'Algorithms & Data Structures', 'Recursion & DP': 'Algorithms & Data Structures'
   };
   function wingOf(category) { return WING_OF[category] || 'Software Foundations'; }
+  // Curriculum position of a category — the within-tier tie-break for the
+  // Ascent chain (see docs/ASCENT.md, P4). Unknown categories sort last.
+  function categoryRank(category) {
+    const i = CATEGORY_ORDER.indexOf(category);
+    return i < 0 ? CATEGORY_ORDER.length : i;
+  }
 
   function register(def) {
     if (!def || !def.id) throw new Error('viz needs an id');
@@ -46,5 +52,5 @@
     return order.map((c) => ({ category: c, items: map[c] }));
   }
 
-  global.Registry = { register, all, get, grouped, wingOf };
+  global.Registry = { register, all, get, grouped, wingOf, categoryRank };
 })(window);

@@ -2,7 +2,7 @@
    Online users always get the latest deploy immediately (no double-refresh
    dance); the cache exists purely so the app keeps working offline.
    Bump CACHE on any asset change. */
-const CACHE = 'dsa-viz-v9';
+const CACHE = 'dsa-viz-v10';
 
 const ASSETS = [
   './',

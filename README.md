@@ -176,6 +176,12 @@ storage internals. See **[docs/EXPANSION.md](docs/EXPANSION.md)** for the full t
 (elements vs. compounds), the selection criteria, the three new shared widgets it requires,
 and the four-wave build plan.
 
+The site's primary structure is **the Ascent** — a computed, dependency-ordered climb from
+atomic elements to high compounds, with categories as a secondary index. The rules for
+growing that chain (edge kinds, tier computation, the canonical linear order, and the
+invariant that no concept is ever presented before its ingredients) are recorded in
+**[docs/ASCENT.md](docs/ASCENT.md)** and enforced by `Ascent.verify()` in the test harness.
+
 ## License
 
 MIT — use it freely for teaching or learning.

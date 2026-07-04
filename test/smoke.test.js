@@ -66,8 +66,9 @@ async function run() {
     assert(m.title && m.category && m.hasCreate, `viz "${m.id}" missing title/category/create`);
   });
 
-  // Categories start collapsed; expand all (persisted pref) to check parity.
+  // Categories view: expand all (persisted pref) to check sidebar parity.
   await page.evaluate(() => {
+    localStorage.setItem('sf-nav-view', 'cats');
     localStorage.setItem('sf-expanded', JSON.stringify(window.Registry.grouped().map((g) => g.category)));
   });
   await page.reload();
@@ -75,22 +76,39 @@ async function run() {
   const navIds = await page.$$eval('.nav-item[data-id]', (els) => els.map((e) => e.dataset.id));
   // +1: the pinned Ascent link duplicates the ascent entry (glossary is pinned-only).
   assert(navIds.length >= ids.length, `sidebar shows ${navIds.length} items but registry has ${ids.length}`);
-  // Collapsed-by-default: fresh profile shows category headers but no item links.
+  // Climb view: expanding every tier shows lessons + the whole catalog.
+  const climbCount = await page.evaluate(() => {
+    localStorage.setItem('sf-nav-view', 'climb');
+    const tiers = window.Ascent.computeTiers().bands.map((_, i) => 'tier:' + i);
+    localStorage.setItem('sf-expanded', JSON.stringify(['Lessons'].concat(tiers)));
+    return window.Ascent.order().length;
+  });
+  await page.reload();
+  await page.waitForTimeout(250);
+  const climbIds = await page.$$eval('.cat .nav-item[data-id]', (els) => els.map((e) => e.dataset.id));
+  const lessonsTotal = await page.evaluate(() =>
+    (window.Registry.grouped().find((g) => g.category === 'Lessons') || { items: [] }).items.length);
+  assert(climbIds.length === climbCount + lessonsTotal,
+    `climb sidebar shows ${climbIds.length} items, expected ${climbCount} chain + ${lessonsTotal} lessons`);
+  // Collapsed-by-default: fresh profile (climb view) shows group headers,
+  // the view tabs, and no item links.
   const ctx2 = await browser.newContext();
   const p2 = await ctx2.newPage();
   await p2.goto(INDEX_URL);
   await p2.waitForTimeout(250);
   const fresh = await p2.evaluate(() => ({
-    cats: document.querySelectorAll('.cat__title--btn').length,
-    items: document.querySelectorAll('.cat .nav-item').length
+    groups: document.querySelectorAll('.cat__title--btn').length,
+    items: document.querySelectorAll('.cat .nav-item').length,
+    tabs: document.querySelectorAll('.nav-tabs .nav-tab').length
   }));
-  assert(fresh.cats >= 10, `fresh sidebar shows only ${fresh.cats} category headers`);
+  assert(fresh.groups >= 5, `fresh sidebar shows only ${fresh.groups} group headers`);
   assert(fresh.items === 0, `fresh sidebar should start collapsed but shows ${fresh.items} items`);
-  // Navigating opens the active page's category automatically.
+  assert(fresh.tabs === 2, `expected 2 nav view tabs, found ${fresh.tabs}`);
+  // Navigating opens the active page's group (its tier, in climb view).
   await p2.goto(INDEX_URL + '#/bst');
   await p2.waitForTimeout(300);
   const autoOpened = await p2.evaluate(() => !!document.querySelector('.cat .nav-item.active'));
-  assert(autoOpened, 'active category did not auto-expand for the current page');
+  assert(autoOpened, 'active group did not auto-expand for the current page');
   await ctx2.close();
 
   console.log(`Registry: ${ids.length} visualizations — ${meta.map((m) => m.id).join(', ')}\n`);
@@ -173,6 +191,57 @@ async function run() {
   assert(asc.cards >= 50, `ascent shows only ${asc.cards} cards`);
   assert(asc.elements >= 5, `ascent base camp has only ${asc.elements} elements`);
   console.log(ascentProblems.length ? 'Ascent: FAILED' : `Ascent: ${asc.bands} tiers over ${asc.cards} entries, ordering verified ✓`);
+
+  // The chain (docs/ASCENT.md): Ascent.order() must present every ingredient
+  // strictly before its dependents, cover the catalog, and drive the pager.
+  const chainProblems = await page.evaluate(() => {
+    const out = [];
+    const chain = window.Ascent.order();
+    const pos = {}; chain.forEach((d, i) => { pos[d.id] = i; });
+    const ct = window.Ascent.computeTiers();
+    chain.forEach((d) => ct.depsOf(d).forEach((dep) => {
+      if (!(pos[dep] < pos[d.id])) out.push(`${d.id} presented before its ingredient ${dep}`);
+    }));
+    const catalog = window.Registry.all().filter((d) => d.category !== 'Lessons' && d.category !== 'Reference');
+    if (chain.length !== catalog.length) out.push(`chain has ${chain.length} entries, catalog has ${catalog.length}`);
+    if (ct.depsOf(chain[0]).length) out.push('chain does not start with an element');
+    return out;
+  }).catch((e) => ['chain harness error: ' + e.message]);
+  chainProblems.forEach((p) => failures.push('chain: ' + p));
+  console.log(chainProblems.length ? 'Chain: FAILED' : 'Chain: topological order verified — no concept before its ingredients ✓');
+
+  // Pager follows the chain: on a mid-chain page, prev/next must be the
+  // chain neighbours, and the position label must show climb progress.
+  const pagerChain = await page.evaluate(() => {
+    const chain = window.Ascent.order();
+    const i = chain.findIndex((d) => d.id === 'lru-cache');
+    return { prev: '#/' + chain[i - 1].id, next: '#/' + chain[i + 1].id };
+  });
+  await page.goto(INDEX_URL + '#/lru-cache');
+  await page.waitForTimeout(200);
+  const pagerDom = await page.evaluate(() => ({
+    prev: document.querySelector('.pager__prev') && document.querySelector('.pager__prev').getAttribute('href'),
+    next: document.querySelector('.pager__next') && document.querySelector('.pager__next').getAttribute('href'),
+    label: (document.querySelector('.pager__hint') || {}).textContent || ''
+  }));
+  assert(pagerDom.prev === pagerChain.prev, `pager prev is ${pagerDom.prev}, chain says ${pagerChain.prev}`);
+  assert(pagerDom.next === pagerChain.next, `pager next is ${pagerDom.next}, chain says ${pagerChain.next}`);
+  assert(/on the climb/.test(pagerDom.label), 'pager does not show climb position');
+
+  // Landing leads with the climb; #/index holds the category grid.
+  await page.goto(INDEX_URL + '#/');
+  await page.waitForTimeout(250);
+  const landing = await page.evaluate(() => ({
+    bands: document.querySelectorAll('.ascent-band').length,
+    cta: !!document.querySelector('.hero-cta')
+  }));
+  assert(landing.bands >= 4, `landing shows only ${landing.bands} ascent bands — should lead with the climb`);
+  assert(landing.cta, 'landing hero CTA missing');
+  await page.goto(INDEX_URL + '#/index');
+  await page.waitForTimeout(250);
+  const indexCards = await page.$$eval('.landing__grid .card', (e) => e.length).catch(() => 0);
+  assert(indexCards >= 50, `category index shows only ${indexCards} cards`);
+  console.log('Climb-first: landing bands + pager chain + category index ✓');
 
   await page.goto(INDEX_URL + '#/lru-cache');
   await page.waitForTimeout(200);

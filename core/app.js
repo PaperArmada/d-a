@@ -27,14 +27,16 @@
         const s = document.querySelector('.search'); if (s) { e.preventDefault(); s.focus(); }
       }
       if (e.key === 'Escape') closeSidebar();
-      // [ and ] page through visualizations in catalog order
+      // [ and ] page through the site in climb order (see chainFor)
       if ((e.key === '[' || e.key === ']') && document.activeElement && document.activeElement.tagName !== 'INPUT') {
         const id = parseHash().id;
-        if (!id) return;
-        const flat = flatOrder();
-        const i = flat.findIndex((d) => d.id === id);
+        const def = id && Registry.get(id);
+        if (!def) return;
+        const chain = chainFor(def);
+        if (!chain) return;
+        const i = chain.list.findIndex((d) => d.id === id);
         if (i < 0) return;
-        const next = e.key === ']' ? flat[i + 1] : flat[i - 1];
+        const next = e.key === ']' ? chain.list[i + 1] : chain.list[i - 1];
         if (next) location.hash = '#/' + next.id;
       }
     });
@@ -45,6 +47,23 @@
     const out = [];
     Registry.grouped().forEach((g) => g.items.forEach((it) => out.push(it)));
     return out;
+  }
+
+  /* Which linear sequence does prev/next walk for this page?
+     Catalog entries follow the Ascent chain (docs/ASCENT.md P4): elements
+     first, and never a concept before its ingredients. Lessons page among
+     lessons; Reference pages (glossary, ascent, index) don't page. */
+  function chainFor(def) {
+    if (def.category === 'Reference') return null;
+    if (def.category === 'Lessons') {
+      const g = Registry.grouped().find((x) => x.category === 'Lessons');
+      return { list: g ? g.items : [], label: 'lesson' };
+    }
+    if (global.Ascent) {
+      const list = global.Ascent.order();
+      if (list.some((d) => d.id === def.id)) return { list, label: 'climb' };
+    }
+    return { list: flatOrder(), label: '' };
   }
 
   function isEmbed() {
@@ -122,6 +141,11 @@
   };
 
   // ---- Sidebar -----------------------------------------------------------
+  // Two views: the Climb (primary — the Ascent's tier order) and Categories
+  // (secondary index). See docs/ASCENT.md.
+  function navView() { return localStorage.getItem('sf-nav-view') === 'cats' ? 'cats' : 'climb'; }
+  function setNavView(v) { try { localStorage.setItem('sf-nav-view', v); } catch (e) {} }
+
   function buildSidebar(filter) {
     clear(sidebar);
     navItems = [];
@@ -144,51 +168,92 @@
     sidebar.appendChild(el('a.nav-item', { href: '#/ascent', dataset: { id: 'ascent' } }, '🧗 The Ascent'));
     sidebar.appendChild(el('a.nav-item', { href: '#/glossary', dataset: { id: 'glossary' } }, '📖 Glossary'));
 
-    // Categories start COLLAPSED; users expand what they want (persisted),
-    // and the active page's category auto-expands transiently.
+    const view = navView();
+    sidebar.appendChild(el('div.nav-tabs', { role: 'tablist' }, [
+      el('button.nav-tab' + (view === 'climb' ? '.active' : ''), {
+        role: 'tab', 'aria-selected': String(view === 'climb'),
+        onclick: function () { setNavView('climb'); buildSidebar(filter); }
+      }, '🧗 The Climb'),
+      el('button.nav-tab' + (view === 'cats' ? '.active' : ''), {
+        role: 'tab', 'aria-selected': String(view === 'cats'),
+        onclick: function () { setNavView('cats'); buildSidebar(filter); }
+      }, '🗂 Categories')
+    ]));
+
+    // Groups start COLLAPSED; users expand what they want (persisted),
+    // and the active page's group auto-expands transiently.
     let expanded;
     try { expanded = new Set(JSON.parse(localStorage.getItem('sf-expanded') || '[]')); } catch (e) { expanded = new Set(); }
     function saveExpanded() { try { localStorage.setItem('sf-expanded', JSON.stringify([...expanded])); } catch (e) {} }
 
+    const matches = (it) => !filter ||
+      (it.title + ' ' + it.blurb + ' ' + it.category).toLowerCase().indexOf(filter) >= 0;
     let shown = 0;
-    let lastWing = null;
-    Registry.grouped().forEach(function (g) {
-      if (g.category === 'Reference') return; // Glossary has its own pinned link above
-      const items = g.items.filter(function (it) {
-        if (!filter) return true;
-        return (it.title + ' ' + it.blurb + ' ' + it.category).toLowerCase().indexOf(filter) >= 0;
-      });
-      if (!items.length) return;
+
+    // Shared collapsible group. `key` is the persisted identity ('tier:2' in
+    // climb view, the category name in categories view).
+    function addGroup(key, label, items, withTicks) {
       shown += items.length;
-      const wing = Registry.wingOf(g.category);
-      if (wing !== lastWing && wing !== 'Learn') {
-        sidebar.appendChild(el('div.wing-title', wing));
-        lastWing = wing;
-      }
-      // Open when: user expanded it, it's the active page's category, or searching.
-      const isCollapsed = !expanded.has(g.category) && !autoExpand.has(g.category) && !filter;
+      const seen = (withTicks && global.Ascent) ? global.Ascent.visitedSet() : null;
+      const isCollapsed = !expanded.has(key) && !autoExpand.has(key) && !filter;
       const title = el('div.cat__title.cat__title--btn', {
         role: 'button', tabindex: '0', 'aria-expanded': String(!isCollapsed),
         onclick: function () {
-          if (isCollapsed) expanded.add(g.category);
-          else { expanded.delete(g.category); autoExpand.delete(g.category); }
+          if (isCollapsed) expanded.add(key);
+          else { expanded.delete(key); autoExpand.delete(key); }
           saveExpanded(); buildSidebar(filter);
         }
-      }, [el('span.cat__caret', isCollapsed ? '▸' : '▾'), g.category + '  ', el('span.cat__count', String(items.length))]);
+      }, [el('span.cat__caret', isCollapsed ? '▸' : '▾'), label + '  ', el('span.cat__count', String(items.length))]);
       const cat = el('div.cat', [title]);
       if (!isCollapsed) {
         items.forEach(function (it) {
           cat.appendChild(el('a.nav-item', { href: '#/' + it.id, dataset: { id: it.id } }, [
-            it.title, el('span.nav-item__blurb', it.blurb)
+            it.title,
+            (seen && seen.has(it.id)) ? el('span.nav-item__tick', ' ✓') : null,
+            el('span.nav-item__blurb', it.blurb)
           ]));
           navItems.push(cat.lastChild);
         });
       }
       sidebar.appendChild(cat);
-    });
+    }
+
+    if (view === 'climb' && global.Ascent) {
+      const lessons = (Registry.grouped().find((g) => g.category === 'Lessons') || { items: [] }).items.filter(matches);
+      if (lessons.length) addGroup('Lessons', '🎓 Guided lessons', lessons, false);
+      global.Ascent.computeTiers().bands.forEach(function (band, i) {
+        const items = band.filter(matches);
+        if (items.length) addGroup('tier:' + i, 'Tier ' + i + ' · ' + global.Ascent.tierName(i).split(' — ')[0], items, true);
+      });
+    } else {
+      let lastWing = null;
+      Registry.grouped().forEach(function (g) {
+        if (g.category === 'Reference') return; // Glossary/Ascent have pinned links above
+        const items = g.items.filter(matches);
+        if (!items.length) return;
+        const wing = Registry.wingOf(g.category);
+        if (wing !== lastWing && wing !== 'Learn') {
+          sidebar.appendChild(el('div.wing-title', wing));
+          lastWing = wing;
+        }
+        addGroup(g.category, g.category, items, false);
+      });
+    }
 
     if (!shown) sidebar.appendChild(el('div.hint', { style: { padding: '8px 12px' } }, 'No matches.'));
     highlightActive();
+  }
+
+  // Which sidebar group holds this page, in the current view?
+  function groupKeyFor(id) {
+    const def = Registry.get(id);
+    if (!def || def.category === 'Reference') return null;
+    if (navView() === 'climb' && global.Ascent) {
+      if (def.category === 'Lessons') return 'Lessons';
+      const t = global.Ascent.computeTiers().tier[def.id];
+      return t == null ? null : 'tier:' + t;
+    }
+    return def.category;
   }
 
   function highlightActive(noRebuild) {
@@ -203,13 +268,13 @@
       const pinned = sidebar && sidebar.querySelector('.nav-item[data-id="' + pid + '"]');
       if (pinned) pinned.classList.toggle('active', id === pid);
     });
-    // If the active page lives in a collapsed category, open that category
+    // If the active page lives in a collapsed group, open that group
     // (transiently) and rebuild once so the highlight is visible.
     if (!active && !noRebuild && id) {
-      const def = Registry.get(id);
-      if (def && def.category && !autoExpand.has(def.category)) {
+      const key = groupKeyFor(id);
+      if (key && !autoExpand.has(key)) {
         autoExpand.clear();
-        autoExpand.add(def.category);
+        autoExpand.add(key);
         const search = sidebar && sidebar.querySelector('.search');
         buildSidebar(search ? search.value.trim().toLowerCase() : '');
         return;
@@ -226,6 +291,7 @@
     const { id, params } = parseHash();
 
     if (!id) { renderLanding(); highlightActive(); return; }
+    if (id === 'index') { renderIndex(); highlightActive(); return; }
     const def = Registry.get(id);
     if (!def) { renderLanding(); highlightActive(); return; }
 
@@ -260,44 +326,80 @@
   }
 
   // "Built from" (madeOf) + "Used by" (reverse madeOf) concept links.
+  // Ingredients you haven't opened yet are marked — a gentle nudge back down
+  // the mountain before pressing on.
   function appendRelated(def) {
     const builtFrom = (def.madeOf || []).map((id) => Registry.get(id)).filter(Boolean);
     const usedBy = Registry.all().filter((d) => (d.madeOf || []).indexOf(def.id) >= 0);
     if (!builtFrom.length && !usedBy.length) return;
-    const chips = (list) => list.map((d) => el('a.pill.related__chip', { href: '#/' + d.id }, d.title));
+    const seen = global.Ascent ? global.Ascent.visitedSet() : new Set();
+    const chips = (list, markUnseen) => list.map((d) => {
+      const unseen = markUnseen && !seen.has(d.id);
+      return el('a.pill.related__chip' + (unseen ? '.related__chip--unseen' : ''), {
+        href: '#/' + d.id, title: unseen ? 'You haven\'t visited this ingredient yet' : ''
+      }, d.title);
+    });
     const row = el('div.related');
-    if (builtFrom.length) row.appendChild(el('div.related__group', [el('span.related__label', '⚗ built from'), ...chips(builtFrom)]));
-    if (usedBy.length) row.appendChild(el('div.related__group', [el('span.related__label', '→ used by'), ...chips(usedBy)]));
+    if (builtFrom.length) row.appendChild(el('div.related__group', [el('span.related__label', '⚗ built from'), ...chips(builtFrom, true)]));
+    if (usedBy.length) row.appendChild(el('div.related__group', [el('span.related__label', '→ used by'), ...chips(usedBy, false)]));
     main.appendChild(row);
   }
 
   function appendPager(def) {
-    const flat = flatOrder();
-    const i = flat.findIndex((d) => d.id === def.id);
+    const chain = chainFor(def);
+    if (!chain) return;
+    const i = chain.list.findIndex((d) => d.id === def.id);
     if (i < 0) return;
-    const prev = flat[i - 1], next = flat[i + 1];
+    const prev = chain.list[i - 1], next = chain.list[i + 1];
+    const mid = chain.label === 'climb'
+      ? '⛰ ' + (i + 1) + ' / ' + chain.list.length + ' on the climb · [ and ] keys'
+      : '[ and ] keys work too';
     main.appendChild(el('div.pager', [
       prev ? el('a.pager__link.pager__prev', { href: '#/' + prev.id }, [
-        el('span.pager__dir', '← previous'), el('span.pager__title', prev.title)]) : el('span'),
-      el('span.pager__hint.mono.dim', '[ and ] keys work too'),
+        el('span.pager__dir', chain.label === 'climb' ? '← back down' : '← previous'), el('span.pager__title', prev.title)]) : el('span'),
+      el('span.pager__hint.mono.dim', mid),
       next ? el('a.pager__link.pager__next', { href: '#/' + next.id }, [
-        el('span.pager__dir', 'next →'), el('span.pager__title', next.title)]) : el('span')
+        el('span.pager__dir', chain.label === 'climb' ? 'climb on →' : 'next →'), el('span.pager__title', next.title)]) : el('span')
     ]));
   }
 
+  // The landing leads with the climb (docs/ASCENT.md): hero, then the full
+  // tiered ascent. The flat category grid lives at #/index as a secondary view.
   function renderLanding() {
+    const nxt = global.Ascent ? global.Ascent.firstUnvisited() : null;
+    const started = global.Ascent && global.Ascent.visitedSet().size > 0;
     main.appendChild(el('div.main__header', [
-      el('h2', 'Software Foundations — an interactive atlas of how software works'),
-      el('p', 'Step through the concrete mechanisms of software 1.0: algorithms and data structures, ' +
-              'design patterns, runtime internals, memory & number representation, protocols, and storage. ' +
-              'Elements are atomic concepts; compounds are built from them. ' +
-              'Keyboard: Space = play/pause, ← / → = step, “/” = search.'),
+      el('h2', 'Software Foundations — the climb from bits to systems'),
+      el('p', 'An interactive atlas of how software works, ordered like a mountain: atomic elements at ' +
+              'base camp, and every higher concept built only from ones you\'ve already met. ' +
+              'Climb in order, or jump anywhere — each page links its ingredients. ' +
+              'Keyboard: Space = play/pause, ← / → = step, [ / ] = move along the climb, “/” = search.'),
       el('div.hero-ctas', [
-        el('a.btn.btn--primary.hero-cta', { href: '#/ascent' }, '🧗 Start the Ascent — elements first, then upward'),
-        el('a.btn.hero-cta', { href: '#/lesson-sorting' }, '🎓 Or begin with a guided lesson'),
-        el('a.btn.btn--ghost.hero-cta', { href: '#/glossary' }, '📖 Glossary')
+        nxt ? el('a.btn.btn--primary.hero-cta', { href: '#/' + nxt.id },
+                 (started ? '⛏ Continue the climb — ' : '🧗 Start the climb — ') + nxt.title)
+            : el('a.btn.btn--primary.hero-cta', { href: '#/ascent' }, '🏔 Summit reached — revisit the map'),
+        el('a.btn.hero-cta', { href: '#/lesson-sorting' }, '🎓 Guided lessons'),
+        el('a.btn.btn--ghost.hero-cta', { href: '#/glossary' }, '📖 Glossary'),
+        el('a.btn.btn--ghost.hero-cta', { href: '#/index' }, '🗂 Index by category')
       ])
     ]));
+    if (global.Ascent) global.Ascent.renderClimb(main, { cta: false });
+    else renderIndex(true);
+  }
+
+  // Secondary index: the whole catalog as a flat grid, grouped by category.
+  function renderIndex(bare) {
+    if (!bare) {
+      main.appendChild(el('div.main__header', [
+        el('div.crumbs', [
+          el('a', { href: '#/' }, 'Home'), el('span.crumbs__sep', '›'),
+          el('span.crumbs__here', 'Index by category')
+        ]),
+        el('h2', 'Index by category'),
+        el('p', 'Every page, grouped by topic — the secondary way around the site.'),
+        el('p', [el('a', { href: '#/' }, '← back to the climb')])
+      ]));
+    }
     let lastWing = null;
     Registry.grouped().forEach(function (g) {
       const wing = Registry.wingOf(g.category);
