@@ -107,7 +107,7 @@
       container.appendChild(stage);
       container.appendChild(el('div.complexity', [
         el('span.pill', [el('b', 'Keys moved on resize: '), '≈ K/N (vs ≈ K for mod-N)']),
-        el('span.pill', [el('b', 'Used by: '), 'memcached rings · DynamoDB · CDNs']),
+        el('span.pill', [el('b', 'In the wild: '), 'memcached rings · DynamoDB · CDNs']),
         el('span.pill', [el('b', 'In practice: '), 'virtual nodes smooth the arcs'])
       ]));
       render();

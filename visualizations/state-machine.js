@@ -118,8 +118,9 @@
       container.appendChild(status);
       container.appendChild(stage);
       container.appendChild(el('div.complexity', [
-        el('span.pill', [el('b', 'Transition: '), 'O(1)']),
-        el('span.pill', [el('b', 'Used by: '), 'regex · circuit breaker · protocols · UI flows'])
+        el('span.pill', [el('b', 'Transition cost: '), 'O(1) — one lookup in the table']),
+        el('span.pill', [el('b', 'Invariant: '), 'exactly one current state']),
+        el('span.pill', [el('b', 'In the wild: '), 'UI flows · game AI · protocol handshakes'])
       ]));
       buildInputs(); render();
       setStatus('Machine: ' + m.name + '. Current state highlighted — press an input.');

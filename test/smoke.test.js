@@ -364,6 +364,19 @@ async function run() {
     });
     assert(rendered, `[${m.id}] nothing rendered`);
 
+    // Style-guide conformance (docs/DEMOS.md) for catalog demos:
+    // a narrating status line exists, and no pill hand-declares atlas
+    // relationships ("Used by:") — that's the relations layer's job.
+    if (m.category !== 'Lessons' && m.category !== 'Reference') {
+      const anatomy = await page.evaluate(() => ({
+        status: !!document.querySelector('.viz-host .status'),
+        badPills: [...document.querySelectorAll('.viz-host .pill')]
+          .map((p) => p.textContent.trim()).filter((t) => /^used by/i.test(t))
+      }));
+      assert(anatomy.status, `[${m.id}] missing status line (docs/DEMOS.md anatomy)`);
+      assert(!anatomy.badPills.length, `[${m.id}] relationship pill belongs in the relations layer: "${anatomy.badPills[0]}"`);
+    }
+
     // Player step: click the Step-forward button and confirm the progress
     // label *in its own .controls* advances. Scoping to the same controls
     // avoids confusion on lesson pages, which show both a lesson step counter

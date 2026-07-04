@@ -179,7 +179,9 @@ and the four-wave build plan.
 Terminology, used consistently everywhere: a **demo** is an interactive page (the thing you
 poke at); a **lesson** is a guided tour that sequences demos with prose; the **Ascent** is the
 dependency-ordered path through all demos. Demos show pseudocode wherever an operation has
-steps worth following.
+steps worth following. The full demo standard — anatomy, color semantics, narration voice,
+and the relations-layering rule — lives in **[docs/DEMOS.md](docs/DEMOS.md)** and is enforced
+by the harness where checkable.
 
 The site's primary structure is **the Ascent** — a computed, dependency-ordered climb from
 atomic elements to high compounds, with categories as a secondary index. The rules for
