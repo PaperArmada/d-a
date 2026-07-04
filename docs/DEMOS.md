@@ -44,6 +44,13 @@ The app shell provides 1, 8 and 9; the demo's `create()` provides the rest.
    The harness rejects the banned labels and enforces `In the wild:` last —
    so a reader always knows what a pill row holds: what it costs, what it
    carries, what's always true, where it lives in the real world.
+
+   Because the vocabulary is closed, the shell **auto-classifies** every
+   pill and marks its kind with a colored dot (blue = cost, teal = property,
+   green = invariant, amber = in the wild), appending a small key under the
+   row and a tooltip on each pill. Demos do nothing to opt in — a
+   MutationObserver decorates any `.complexity` row that appears, including
+   demos mounted inside lesson steps.
 8. **Hint** — one closing paragraph telling the story the stage just showed
    ("the nodes never move — only arrows change").
 9. **Relations + pager** — "⚗ built on / → leads to" chips with rationales,

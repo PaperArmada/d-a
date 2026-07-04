@@ -22,6 +22,7 @@
       document.body.appendChild(full);
     }
     window.addEventListener('hashchange', route);
+    new MutationObserver(decoratePills).observe(main, { childList: true, subtree: true });
     // Global shortcuts must never fire while the user is typing (search box,
     // feedback textarea, …).
     function isTyping() {
@@ -366,6 +367,43 @@
     appendPager(def);
     highlightActive();
     main.scrollTop = 0;
+  }
+
+  // ---- Pill kinds ----------------------------------------------------------
+  // The pill vocabulary is closed (docs/DEMOS.md), so the kind of every pill
+  // is inferable — the shell color-codes them and appends a small key, with
+  // zero per-demo work. A MutationObserver keeps this true for demos mounted
+  // later (e.g. inside lesson steps).
+  const PILL_KINDS = [
+    ['cost', 'cost', 'Cost — what an operation costs'],
+    ['property', 'property', 'Property — a fact about this mechanism'],
+    ['invariant', 'invariant', 'Invariant — always true, by design'],
+    ['wild', 'in the wild', 'In the wild — real systems where you\'ll meet this']
+  ];
+  function pillKind(pill) {
+    const label = ((pill.querySelector('b') || { textContent: '' }).textContent || '').trim();
+    if (/^in the wild/i.test(label)) return 'wild';
+    if (/^invariant/i.test(label)) return 'invariant';
+    if (/O\(/.test(pill.textContent) || /^(time|best|worst|average|space|stable)\b/i.test(label) ||
+        /(^|\s)cost:?\s*$/i.test(label) || /\b(cycle|amortized)\b/i.test(pill.textContent)) return 'cost';
+    return 'property';
+  }
+  function decoratePills() {
+    main.querySelectorAll('.complexity:not([data-kinded])').forEach(function (row) {
+      row.setAttribute('data-kinded', '1');
+      const present = [];
+      row.querySelectorAll('.pill').forEach(function (p) {
+        const k = pillKind(p);
+        p.classList.add('pill--' + k);
+        PILL_KINDS.forEach(function (K) { if (K[0] === k) p.title = K[2]; });
+        if (present.indexOf(k) < 0) present.push(k);
+      });
+      if (present.length) {
+        row.appendChild(el('span.pill-key', PILL_KINDS
+          .filter((K) => present.indexOf(K[0]) >= 0)
+          .map((K) => el('span.pill-key__item.pill-key__item--' + K[0], { title: K[2] }, K[1]))));
+      }
+    });
   }
 
   // Relations panel — derived entirely from the ingredient graph

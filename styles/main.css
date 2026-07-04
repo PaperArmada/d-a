@@ -378,6 +378,29 @@ svg.diagram { display: block; width: 100%; height: auto; }
 }
 .complexity .pill b { color: var(--accent-2); }
 
+/* Pill kinds — colored dot per kind (auto-classified by the shell; the
+   vocabulary is closed, see docs/DEMOS.md). */
+.complexity .pill[class*="pill--"]::before {
+  content: ''; display: inline-block; width: 7px; height: 7px; border-radius: 50%;
+  margin-right: 7px; vertical-align: 1px;
+}
+.pill--cost::before      { background: var(--accent); }
+.pill--property::before  { background: var(--accent-2); }
+.pill--invariant::before { background: var(--good); }
+.pill--wild::before      { background: var(--warn); }
+.pill-key {
+  flex-basis: 100%; display: flex; flex-wrap: wrap; gap: 14px;
+  font-size: 11px; color: var(--text-dim); margin-top: 2px; cursor: default;
+}
+.pill-key__item::before {
+  content: ''; display: inline-block; width: 6px; height: 6px; border-radius: 50%;
+  margin-right: 5px; vertical-align: 1px;
+}
+.pill-key__item--cost::before      { background: var(--accent); }
+.pill-key__item--property::before  { background: var(--accent-2); }
+.pill-key__item--invariant::before { background: var(--good); }
+.pill-key__item--wild::before      { background: var(--warn); }
+
 /* ---- Modern polish ---- */
 @keyframes fade-up { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }

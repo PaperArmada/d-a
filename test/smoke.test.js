@@ -349,6 +349,20 @@ async function run() {
     `insertion sort missing conceptual "built on" chip (got: ${rel.builtOn})`);
   assert(rel.whyItems >= 1, 'insertion sort has no "why these ingredients" rationale list');
   assert(rel.everyIngredientHasWhy, 'some edge is missing a readable rationale');
+
+  // Pill kinds: on a demo with all three non-cost kinds, the classifier must
+  // color each correctly and render the key.
+  await page.goto(INDEX_URL + '#/state-machine');
+  await page.waitForTimeout(200);
+  const pillKinds = await page.evaluate(() => ({
+    cost: !!document.querySelector('.complexity .pill--cost'),
+    invariant: !!document.querySelector('.complexity .pill--invariant'),
+    wild: !!document.querySelector('.complexity .pill--wild'),
+    keyItems: document.querySelectorAll('.complexity .pill-key .pill-key__item').length
+  }));
+  assert(pillKinds.cost && pillKinds.invariant && pillKinds.wild,
+    `pill classifier missed a kind on state-machine (${JSON.stringify(pillKinds)})`);
+  assert(pillKinds.keyItems >= 3, `pill key shows only ${pillKinds.keyItems} kinds on state-machine`);
   console.log((glossProblems.length ? 'Glossary: FAILED' : 'Glossary: definitions verified, linkify OK, page + strips + pager + crumbs present ✓'));
   console.log('');
 
@@ -369,19 +383,23 @@ async function run() {
     // hand-made atlas relationships); "In the wild:" is the last pill.
     if (m.category !== 'Lessons' && m.category !== 'Reference') {
       const anatomy = await page.evaluate(() => {
-        const pills = [...document.querySelectorAll('.viz-host .complexity .pill')]
-          .map((p) => p.textContent.trim());
+        const pillEls = [...document.querySelectorAll('.viz-host .complexity .pill')];
+        const pills = pillEls.map((p) => p.textContent.trim());
         const BANNED = /^(used by|compound of|pairs with|everywhere|see also|why|lesson|takeaway|bonus|same idea|in practice|refactor goal|vs )/i;
         const wildIdx = pills.findIndex((t) => /^in the wild/i.test(t));
         return {
           status: !!document.querySelector('.viz-host .status'),
           badPills: pills.filter((t) => BANNED.test(t)),
-          wildNotLast: wildIdx >= 0 && wildIdx !== pills.length - 1
+          wildNotLast: wildIdx >= 0 && wildIdx !== pills.length - 1,
+          unkinded: pillEls.filter((p) => !/(^| )pill--(cost|property|invariant|wild)( |$)/.test(p.className)).length,
+          keyMissing: pillEls.length > 0 && !document.querySelector('.viz-host .complexity .pill-key')
         };
       });
       assert(anatomy.status, `[${m.id}] missing status line (docs/DEMOS.md anatomy)`);
       assert(!anatomy.badPills.length, `[${m.id}] pill outside the closed vocabulary (docs/DEMOS.md): "${anatomy.badPills[0]}"`);
       assert(!anatomy.wildNotLast, `[${m.id}] "In the wild:" pill must be the last pill`);
+      assert(!anatomy.unkinded, `[${m.id}] ${anatomy.unkinded} pill(s) not auto-classified with a kind dot`);
+      assert(!anatomy.keyMissing, `[${m.id}] pill row missing its kind key`);
     }
 
     // Player step: click the Step-forward button and confirm the progress
