@@ -2,7 +2,7 @@
    Online users always get the latest deploy immediately (no double-refresh
    dance); the cache exists purely so the app keeps working offline.
    Bump CACHE on any asset change. */
-const CACHE = 'dsa-viz-v10';
+const CACHE = 'dsa-viz-v11';
 
 const ASSETS = [
   './',
@@ -19,6 +19,7 @@ const ASSETS = [
   './core/share.js',
   './core/glossary.js',
   './core/ascent.js',
+  './core/feedback.js',
   './core/lessons.js',
   './core/app.js',
   './visualizations/binary-rep.js',

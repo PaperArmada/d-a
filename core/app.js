@@ -22,13 +22,19 @@
       document.body.appendChild(full);
     }
     window.addEventListener('hashchange', route);
+    // Global shortcuts must never fire while the user is typing (search box,
+    // feedback textarea, …).
+    function isTyping() {
+      const a = document.activeElement;
+      return !!a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA' || a.tagName === 'SELECT' || a.isContentEditable);
+    }
     window.addEventListener('keydown', function (e) {
-      if (e.key === '/' && document.activeElement && document.activeElement.tagName !== 'INPUT') {
+      if (e.key === '/' && !isTyping()) {
         const s = document.querySelector('.search'); if (s) { e.preventDefault(); s.focus(); }
       }
       if (e.key === 'Escape') closeSidebar();
       // [ and ] page through the site in climb order (see chainFor)
-      if ((e.key === '[' || e.key === ']') && document.activeElement && document.activeElement.tagName !== 'INPUT') {
+      if ((e.key === '[' || e.key === ']') && !isTyping()) {
         const id = parseHash().id;
         const def = id && Registry.get(id);
         if (!def) return;
@@ -220,7 +226,7 @@
 
     if (view === 'climb' && global.Ascent) {
       const lessons = (Registry.grouped().find((g) => g.category === 'Lessons') || { items: [] }).items.filter(matches);
-      if (lessons.length) addGroup('Lessons', '🎓 Guided lessons', lessons, false);
+      if (lessons.length) addGroup('Lessons', '🎓 Guided lessons', lessons, true);
       global.Ascent.computeTiers().bands.forEach(function (band, i) {
         const items = band.filter(matches);
         if (items.length) addGroup('tier:' + i, 'Tier ' + i + ' · ' + global.Ascent.tierName(i).split(' — ')[0], items, true);
@@ -256,6 +262,19 @@
     return def.category;
   }
 
+  // Ticks are baked in at build time; navigating within an already-expanded
+  // group doesn't rebuild the sidebar, so sync them in place on every route.
+  function syncTicks() {
+    if (!global.Ascent || navView() !== 'climb') return;
+    const seen = global.Ascent.visitedSet();
+    navItems.forEach(function (n) {
+      const tick = n.querySelector('.nav-item__tick');
+      const should = seen.has(n.dataset.id);
+      if (should && !tick) n.insertBefore(el('span.nav-item__tick', ' ✓'), n.querySelector('.nav-item__blurb'));
+      else if (!should && tick) tick.remove();
+    });
+  }
+
   function highlightActive(noRebuild) {
     const id = parseHash().id;
     let active = null;
@@ -264,6 +283,7 @@
       n.classList.toggle('active', is);
       if (is) active = n;
     });
+    syncTicks();
     ['glossary', 'ascent'].forEach(function (pid) {
       const pinned = sidebar && sidebar.querySelector('.nav-item[data-id="' + pid + '"]');
       if (pinned) pinned.classList.toggle('active', id === pid);
@@ -311,6 +331,24 @@
       const seen = new Set(JSON.parse(localStorage.getItem('sf-visited') || '[]'));
       if (!seen.has(id)) { seen.add(id); localStorage.setItem('sf-visited', JSON.stringify([...seen])); }
     } catch (e) {}
+    // …but the mark is the user's to keep or clear ("I only skimmed this").
+    if (def.category !== 'Reference' && global.Ascent) {
+      const btn = el('button.visit-toggle');
+      const paint = function () {
+        const on = global.Ascent.visitedSet().has(id);
+        btn.textContent = on ? '✓ visited' : '○ not visited';
+        btn.title = on ? 'Counted toward your climb — click to clear the mark' : 'Click to mark as visited';
+        btn.classList.toggle('on', on);
+      };
+      btn.addEventListener('click', function () {
+        global.Ascent.setVisited(id, !global.Ascent.visitedSet().has(id));
+        paint();
+        syncTicks();
+      });
+      paint();
+      const crumbs = main.querySelector('.crumbs');
+      if (crumbs) crumbs.appendChild(btn);
+    }
     const host = el('div.viz-host');
     main.appendChild(host);
     try {

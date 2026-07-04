@@ -139,6 +139,15 @@
   function visitedSet() {
     try { return new Set(JSON.parse(localStorage.getItem('sf-visited') || '[]')); } catch (e) { return new Set(); }
   }
+  // Visited marks belong to the user: pages auto-mark on open, but any mark
+  // can be cleared ("I clicked through without really digesting it").
+  function setVisited(id, on) {
+    try {
+      const seen = visitedSet();
+      if (on) seen.add(id); else seen.delete(id);
+      localStorage.setItem('sf-visited', JSON.stringify([...seen]));
+    } catch (e) {}
+  }
 
   const TIER_NAMES = [
     'Base camp — the elements', 'First ascent — one idea on another', 'Compounds',
@@ -160,48 +169,64 @@
      "continue" button (the landing has its own hero CTA). */
   function renderClimb(container, opts) {
     opts = opts || {};
-    const { bands, depsOf } = computeTiers();
-    const seen = visitedSet();
-    let total = 0, done = 0;
-    bands.forEach((b) => b.forEach((d) => { total++; if (seen.has(d.id)) done++; }));
+    const root = el('div.climb');
+    container.appendChild(root);
 
-    const nxt = firstUnvisited();
-    container.appendChild(el('div.ascent-progress', [
-      el('div.ascent-progress__bar', [el('div.ascent-progress__fill', { style: { width: (total ? Math.round(done / total * 100) : 0) + '%' } })]),
-      el('span.mono.dim', done + ' / ' + total + ' visited'),
-      (opts.cta !== false && nxt)
-        ? el('a.btn.btn--primary.ascent-cta', { href: '#/' + nxt.id }, (done ? '⛏ Continue the climb — ' : '⛏ Start the climb — ') + nxt.title)
-        : null
-    ]));
+    function draw() {
+      clear(root);
+      const { bands, depsOf } = computeTiers();
+      const seen = visitedSet();
+      let total = 0, done = 0;
+      bands.forEach((b) => b.forEach((d) => { total++; if (seen.has(d.id)) done++; }));
 
-    bands.forEach(function (band, i) {
-      if (!band.length) return;
-      const bandEl = el('div.ascent-band', [
-        el('div.ascent-band__head', [
-          el('span.ascent-band__tier', 'Tier ' + i),
-          el('span.ascent-band__name', tierName(i)),
-          el('span.ascent-band__blurb', TIER_BLURBS[Math.min(i, TIER_BLURBS.length - 1)])
-        ]),
-        el('div.ascent-grid', band.map(function (d) {
-          const ds = depsOf(d);
-          return el('a.ascent-card' + (seen.has(d.id) ? '.visited' : ''), { href: '#/' + d.id }, [
-            el('div.ascent-card__top', [
-              el('span.card__tag', d.category),
-              seen.has(d.id) ? el('span.ascent-card__tick', '✓') : null
-            ]),
-            el('div.ascent-card__title', d.title),
-            ds.length ? el('div.ascent-card__deps', '⚗ ' + ds.map((x) => (global.Registry.get(x) || { title: x }).title).join(' + '))
-                      : el('div.ascent-card__deps.ascent-card__deps--elem', 'element · no prerequisites')
-          ]);
-        }))
-      ]);
-      container.appendChild(bandEl);
-    });
-    container.appendChild(el('p.hint', 'Tiers are computed from declared ingredients and prerequisites — ' +
-      'if a card sits above another, it genuinely uses it. Principles: docs/ASCENT.md.'));
+      const nxt = firstUnvisited();
+      root.appendChild(el('div.ascent-progress', [
+        el('div.ascent-progress__bar', [el('div.ascent-progress__fill', { style: { width: (total ? Math.round(done / total * 100) : 0) + '%' } })]),
+        el('span.mono.dim', done + ' / ' + total + ' visited'),
+        (opts.cta !== false && nxt)
+          ? el('a.btn.btn--primary.ascent-cta', { href: '#/' + nxt.id }, (done ? '⛏ Continue the climb — ' : '⛏ Start the climb — ') + nxt.title)
+          : null
+      ]));
+
+      bands.forEach(function (band, i) {
+        if (!band.length) return;
+        const bandEl = el('div.ascent-band', [
+          el('div.ascent-band__head', [
+            el('span.ascent-band__tier', 'Tier ' + i),
+            el('span.ascent-band__name', tierName(i)),
+            el('span.ascent-band__blurb', TIER_BLURBS[Math.min(i, TIER_BLURBS.length - 1)])
+          ]),
+          el('div.ascent-grid', band.map(function (d) {
+            const ds = depsOf(d);
+            let tick = null;
+            if (seen.has(d.id)) {
+              tick = el('span.ascent-card__tick', {
+                role: 'button', tabindex: '0', title: 'Visited — click to clear the mark'
+              }, '✓');
+              tick.addEventListener('click', function (ev) {
+                ev.preventDefault(); ev.stopPropagation();
+                setVisited(d.id, false);
+                draw();
+              });
+            }
+            return el('a.ascent-card' + (seen.has(d.id) ? '.visited' : ''), { href: '#/' + d.id }, [
+              el('div.ascent-card__top', [el('span.card__tag', d.category), tick]),
+              el('div.ascent-card__title', d.title),
+              ds.length ? el('div.ascent-card__deps', '⚗ ' + ds.map((x) => (global.Registry.get(x) || { title: x }).title).join(' + '))
+                        : el('div.ascent-card__deps.ascent-card__deps--elem', 'element · no prerequisites')
+            ]);
+          }))
+        ]);
+        root.appendChild(bandEl);
+      });
+      root.appendChild(el('p.hint', 'Tiers are computed from declared ingredients and prerequisites — ' +
+        'if a card sits above another, it genuinely uses it. ✓ marks are yours: click one to clear it. ' +
+        'Principles: docs/ASCENT.md.'));
+    }
+    draw();
   }
 
-  global.Ascent = { computeTiers, verify, PREREQS, order, firstUnvisited, visitedSet, tierName, renderClimb };
+  global.Ascent = { computeTiers, verify, PREREQS, order, firstUnvisited, visitedSet, setVisited, tierName, renderClimb };
 
   global.Registry.register({
     id: 'ascent',
