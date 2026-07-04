@@ -182,9 +182,13 @@
     const H = opts.height || (top + ((opts.messages || []).length) * rowH + 20);
     const X = (i) => 90 + i * ((W - 180) / Math.max(1, actors.length - 1));
     const svg = svgEl('svg', { class: 'diagram', viewBox: '0 0 ' + W + ' ' + H, width: W, style: 'max-width:100%' });
+    // One marker per line colour, so arrowheads always match their shaft
+    // (a mismatched head reads as "a triangle stuck on a line").
     svg.appendChild(svgEl('defs', {}, [
-      svgEl('marker', { id: 'seq-arr', markerWidth: '10', markerHeight: '10', refX: '9', refY: '3', orient: 'auto' },
-        [svgEl('path', { d: 'M0,0 L0,6 L9,3 z', fill: 'var(--accent)' })])
+      svgEl('marker', { id: 'seq-arr', markerWidth: '9', markerHeight: '8', refX: '7.5', refY: '3', orient: 'auto' },
+        [svgEl('path', { d: 'M0,0 L0,6 L7.5,3 z', fill: 'var(--accent)' })]),
+      svgEl('marker', { id: 'seq-arr-hot', markerWidth: '9', markerHeight: '8', refX: '7.5', refY: '3', orient: 'auto' },
+        [svgEl('path', { d: 'M0,0 L0,6 L7.5,3 z', fill: 'var(--warn)' })])
     ]));
     actors.forEach(function (a, i) {
       svg.appendChild(svgEl('rect', { x: X(i) - 46, y: 8, width: 92, height: 26, rx: 7, class: 'node-circle' }));
@@ -207,8 +211,12 @@
         svg.appendChild(svgEl('text', { x: (x1 + xm) / 2, y: y - 6, class: 'edge-weight', text: m.label || '' }));
         return;
       }
-      svg.appendChild(svgEl('line', { x1: x1, y1: y, x2: x2, y2: y + 10,
-        class: 'edge-line' + (last ? ' is-active' : ''), style: last ? '' : 'stroke:var(--accent)', 'marker-end': 'url(#seq-arr)' }));
+      // Inset the endpoints so arrowheads land beside the lifelines, not on
+      // top of the dashed verticals.
+      const dir = x2 > x1 ? 1 : -1;
+      svg.appendChild(svgEl('line', { x1: x1 + dir * 4, y1: y, x2: x2 - dir * 8, y2: y + 10,
+        class: 'edge-line' + (last ? ' is-active' : ''), style: last ? '' : 'stroke:var(--accent)',
+        'marker-end': last ? 'url(#seq-arr-hot)' : 'url(#seq-arr)' }));
       svg.appendChild(svgEl('text', { x: (x1 + x2) / 2, y: y - 2, class: 'edge-weight',
         style: last ? 'fill:var(--warn);font-weight:700' : '', text: m.label || '' }));
     });

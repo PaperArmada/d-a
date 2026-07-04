@@ -18,7 +18,7 @@
     buildMobileChrome();
     sidebar.addEventListener('click', function (e) { if (e.target.closest('.nav-item')) closeSidebar(); });
     if (isEmbed()) {
-      const full = el('a.embed-badge', { href: fullLink(), target: '_blank', rel: 'noopener' }, 'Open in DSA Visualizer ↗');
+      const full = el('a.embed-badge', { href: fullLink(), target: '_blank', rel: 'noopener' }, 'Open in Software Foundations ↗');
       document.body.appendChild(full);
     }
     window.addEventListener('hashchange', route);
@@ -164,7 +164,7 @@
     ]));
 
     const search = el('input.search', {
-      type: 'text', placeholder: 'Search visualizations…  ( / )', value: filter, 'aria-label': 'Search'
+      type: 'text', placeholder: 'Search demos…  ( / )', value: filter, 'aria-label': 'Search'
     });
     search.addEventListener('input', () => buildSidebar(search.value.trim().toLowerCase()));
     sidebar.appendChild(search);
@@ -359,7 +359,7 @@
     try {
       current = def.create(host, params) || null;
     } catch (e) {
-      host.appendChild(el('div.status', 'Error creating visualization: ' + e.message));
+      host.appendChild(el('div.status', 'Error creating demo: ' + e.message));
       console.error(e);
     }
     appendRelated(def);
@@ -368,23 +368,37 @@
     main.scrollTop = 0;
   }
 
-  // "Built from" (madeOf) + "Used by" (reverse madeOf) concept links.
+  // Relations panel — derived entirely from the ingredient graph
+  // (madeOf ∪ PREREQS via Ascent), so every page shows its true neighbours
+  // automatically; nothing is hand-maintained per page. Each edge carries a
+  // recorded rationale (EDGE_WHY), surfaced in the expandable "why" list.
   // Ingredients you haven't opened yet are marked — a gentle nudge back down
   // the mountain before pressing on.
   function appendRelated(def) {
-    const builtFrom = (def.madeOf || []).map((id) => Registry.get(id)).filter(Boolean);
-    const usedBy = Registry.all().filter((d) => (d.madeOf || []).indexOf(def.id) >= 0);
-    if (!builtFrom.length && !usedBy.length) return;
-    const seen = global.Ascent ? global.Ascent.visitedSet() : new Set();
-    const chips = (list, markUnseen) => list.map((d) => {
-      const unseen = markUnseen && !seen.has(d.id);
+    if (!global.Ascent) return;
+    const builtOn = global.Ascent.ingredientsOf(def.id);
+    const leadsTo = global.Ascent.dependentsOf(def.id);
+    if (!builtOn.length && !leadsTo.length) return;
+    const seen = global.Ascent.visitedSet();
+    const chips = (list, markUnseen) => list.map((r) => {
+      const unseen = markUnseen && !seen.has(r.def.id);
       return el('a.pill.related__chip' + (unseen ? '.related__chip--unseen' : ''), {
-        href: '#/' + d.id, title: unseen ? 'You haven\'t visited this ingredient yet' : ''
-      }, d.title);
+        href: '#/' + r.def.id,
+        title: (r.why || '') + (unseen ? (r.why ? ' ' : '') + '(You haven\'t visited this ingredient yet.)' : '')
+      }, r.def.title);
     });
     const row = el('div.related');
-    if (builtFrom.length) row.appendChild(el('div.related__group', [el('span.related__label', '⚗ built from'), ...chips(builtFrom, true)]));
-    if (usedBy.length) row.appendChild(el('div.related__group', [el('span.related__label', '→ used by'), ...chips(usedBy, false)]));
+    if (builtOn.length) row.appendChild(el('div.related__group', [el('span.related__label', '⚗ built on'), ...chips(builtOn, true)]));
+    if (leadsTo.length) row.appendChild(el('div.related__group', [el('span.related__label', '→ leads to'), ...chips(leadsTo, false)]));
+    // The rationales, readable on any device (tooltips don't exist on touch).
+    if (builtOn.some((r) => r.why)) {
+      const details = el('details.related__why', [
+        el('summary', 'Why these ingredients?'),
+        el('ul', builtOn.filter((r) => r.why).map((r) =>
+          el('li', [el('b', r.def.title), ' — ' + r.why])))
+      ]);
+      row.appendChild(details);
+    }
     main.appendChild(row);
   }
 

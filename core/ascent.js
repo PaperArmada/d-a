@@ -32,8 +32,115 @@
     'observer': ['state-machine'], 'tcp': ['state-machine'], 'token-bucket': ['queue']
   };
 
+  /* Edge rationales — WHY each edge exists, in one reviewable map (key:
+     'entry|ingredient'). Every edge (structural madeOf AND conceptual
+     prerequisite) must have one; verify() fails otherwise. These power the
+     "built on" panel on every page. Keep each to one plain-English line. */
+  const EDGE_WHY = {
+    // The Machine
+    'bitwise|binary-rep': 'You can\'t mask or shift bits until you can read a number as bits.',
+    'float-rep|binary-rep': 'A float is just bits given three jobs — sign, exponent, fraction.',
+    'utf8|binary-rep': 'UTF-8 packs code points into bytes using recognizable bit patterns.',
+    'stack-heap|call-stack': 'The stack side of memory is exactly where call frames live.',
+    // Runtime
+    'call-stack|stack': 'Function calls push frames and returns pop them — a stack, literally.',
+    'race-condition|call-stack': 'You need to see interleaved calls before two threads can collide.',
+    'event-loop|call-stack': 'The loop only runs a callback when the call stack is empty.',
+    'event-loop|queue': 'Pending callbacks wait their turn in a FIFO task queue.',
+    'gc-mark-sweep|graph-bfs': 'Mark phase is a graph traversal from the roots through references.',
+    'deadlock|race-condition': 'Locks fix races — deadlock is what happens when locks wait on each other.',
+    // Design Patterns
+    'observer|state-machine': 'The subject is a little state machine; observers react to its transitions.',
+    'strategy|sort-bubble': 'A slow sort makes the case for swapping algorithms behind one interface.',
+    'strategy|sort-merge': 'A fast sort is the alternative strategy you swap in.',
+    'command-undo|stack': 'Undo pops the most recent command — history is a stack.',
+    // Data & Storage
+    'regex-nfa|state-machine': 'A regex compiles to a state machine that consumes one character per step.',
+    'btree|bst': 'A B-tree is a search tree with fat nodes tuned for disk pages.',
+    'transactions|race-condition': 'Transactions exist to make concurrent writes safe.',
+    'index-race|btree': 'The index being raced is a B-tree.',
+    'index-race|search-linear': 'The full-table scan it races against is linear search.',
+    'myers-diff|edit-distance': 'Diff is edit distance restricted to insert/delete, found greedily.',
+    // Systems
+    'tcp|state-machine': 'A connection is a state machine: closed → syn-sent → established…',
+    'http-lifecycle|tcp': 'Every HTTP exchange rides on an established TCP connection.',
+    'circuit-breaker|state-machine': 'Closed / open / half-open — the breaker is a three-state machine.',
+    'token-bucket|queue': 'Requests that can\'t get a token wait in (or are shed from) a queue.',
+    'consistent-hashing|hash-table': 'It fixes what naive hashing breaks when the server count changes.',
+    'git-dag|graph-bfs': 'History walks (log, merge-base) are graph traversals over commits.',
+    'git-dag|hash-table': 'Commits are addressed by hash — the object store is a hash table.',
+    'lru-cache|hash-table': 'The hash table gives O(1) lookup of any cached key.',
+    'lru-cache|linked-list': 'The linked list keeps recency order with O(1) moves to the front.',
+    'idempotency|tcp': 'Retries come from timeouts and lost replies — TCP shows why they happen.',
+    'idempotency|hash-table': 'Deduplication by request key is a hash-table membership check.',
+    // Craft
+    'coupling|graph-bfs': 'Ripple effects are reachability in the dependency graph.',
+    'invariants|bst': 'The BST ordering rule is the canonical always-true property to protect.',
+    'complexity-plot|sort-bubble': 'The n² curve needs a real n² algorithm to draw it.',
+    'complexity-plot|sort-merge': 'The n·log n curve comes from a real divide-and-conquer sort.',
+    // Sorting & searching
+    'sort-insertion|sort-bubble': 'Same compare-and-move idea, but it grows a sorted prefix smarter.',
+    'sort-selection|sort-bubble': 'Same O(n²) family; it just commits to one swap per pass.',
+    'sort-merge|sort-bubble': 'The baseline it beats — feel n² before n·log n.',
+    'sort-merge|call-stack': 'Divide-and-conquer recursion rides the call stack.',
+    'sort-quick|sort-bubble': 'The baseline it beats — feel n² before n·log n.',
+    'sort-quick|call-stack': 'Partition-then-recurse rides the call stack.',
+    'sort-heap|sort-bubble': 'The baseline it beats with a smarter structure.',
+    'sort-heap|heap': 'It IS repeated extract-max from a heap.',
+    'sort-race|sort-merge': 'One of the contenders in the race.',
+    'sort-race|sort-quick': 'The other contender in the race.',
+    'search-binary|search-linear': 'Halving only makes sense against the one-by-one baseline.',
+    // Data structures
+    'bst|linked-list': 'Nodes-and-pointers thinking, now with two children instead of one next.',
+    'avl|bst': 'An AVL tree is a BST that rebalances itself after inserts.',
+    'heap|bst': 'Another binary tree, but ordered by priority instead of left/right.',
+    'trie|linked-list': 'Follow-the-pointer chains, one link per character.',
+    'hash-table|linked-list': 'Colliding keys chain into little linked lists per bucket.',
+    'union-find|linked-list': 'Parent pointers are the same node-and-pointer idea, pointing up.',
+    // Graphs
+    'graph-bfs|queue': 'The frontier is a FIFO queue — that\'s what makes it breadth-first.',
+    'graph-dfs|stack': 'The frontier is a stack — that\'s what makes it depth-first.',
+    'dijkstra|graph-bfs': 'BFS with weights: same wavefront idea, smarter frontier.',
+    'dijkstra|heap': 'The frontier becomes a priority queue keyed by distance.',
+    'graph-builder|graph-bfs': 'One of the traversals you can run on your own graph.',
+    'graph-builder|graph-dfs': 'The other traversal you can run on your own graph.',
+    'pathfinding|graph-bfs': 'The grid is a graph; the wavefront is BFS in disguise.',
+    'path-race|pathfinding': 'The arena the algorithms race in.',
+    'path-race|dijkstra': 'The weighted contender in the race.',
+    // Recursion & DP
+    'hanoi|call-stack': 'Each recursive move sits on the call stack until its subtower resolves.',
+    'fib-tree|call-stack': 'The exploding call tree is the call stack branching.',
+    'lcs|fib-tree': 'Overlapping subproblems, seen in fib, are why memoizing a table works.',
+    'edit-distance|lcs': 'Same table recurrence as LCS, plus a substitution move.',
+    'knapsack|lcs': 'Same fill-the-table thinking, with a weight budget as one axis.'
+  };
+
   function catalog() {
     return global.Registry.all().filter((d) => d.category !== 'Lessons' && d.category !== 'Reference');
+  }
+  function whyEdge(id, dep) { return EDGE_WHY[id + '|' + dep] || ''; }
+
+  /* Full relations for one entry, from the combined graph (madeOf ∪ PREREQS):
+     what it's built on, and what builds on it — each with kind + rationale. */
+  function ingredientsOf(id) {
+    const def = global.Registry.get(id);
+    if (!def) return [];
+    const structural = def.madeOf || [];
+    const all = structural.concat(PREREQS[id] || []).filter((x, i, a) => a.indexOf(x) === i);
+    return all.map((dep) => ({
+      def: global.Registry.get(dep),
+      kind: structural.indexOf(dep) >= 0 ? 'structural' : 'conceptual',
+      why: whyEdge(id, dep)
+    })).filter((r) => r.def);
+  }
+  function dependentsOf(id) {
+    return catalog().filter((d) =>
+      (d.madeOf || []).indexOf(id) >= 0 || (PREREQS[d.id] || []).indexOf(id) >= 0
+    ).map((d) => ({
+      def: d,
+      kind: (d.madeOf || []).indexOf(id) >= 0 ? 'structural' : 'conceptual',
+      why: whyEdge(d.id, id)
+    }));
   }
   function depsOf(d, ids) {
     return (d.madeOf || []).concat(PREREQS[d.id] || []).filter((x, i, a) => ids.has(x) && a.indexOf(x) === i);
@@ -132,6 +239,18 @@
           problems.push('redundant prerequisite: ' + id + ' → ' + p + ' (already implied by another ingredient)');
         }
       });
+    });
+    // P1b/P6.6 — explained edges: every edge carries a one-line rationale,
+    // and every rationale corresponds to a real edge (no stale entries).
+    const edgeKeys = new Set();
+    catalog().forEach(function (d) {
+      depsOf(d).forEach(function (dep) {
+        edgeKeys.add(d.id + '|' + dep);
+        if (!EDGE_WHY[d.id + '|' + dep]) problems.push('edge missing rationale: ' + d.id + ' → ' + dep);
+      });
+    });
+    Object.keys(EDGE_WHY).forEach(function (k) {
+      if (!edgeKeys.has(k)) problems.push('stale rationale (no such edge): ' + k);
     });
     return problems;
   }
@@ -233,7 +352,8 @@
     draw();
   }
 
-  global.Ascent = { computeTiers, verify, PREREQS, order, firstUnvisited, visitedSet, setVisited, tierName, renderClimb };
+  global.Ascent = { computeTiers, verify, PREREQS, EDGE_WHY, order, firstUnvisited, visitedSet, setVisited,
+    tierName, renderClimb, ingredientsOf, dependentsOf };
 
   global.Registry.register({
     id: 'ascent',

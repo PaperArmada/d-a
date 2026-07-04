@@ -16,6 +16,7 @@
   --warn:      #ffb454;
   --danger:    #ff6b81;
   --good:      #4ade80;
+  --focus:     #c084fc;   /* "the element the algorithm is holding": pivot, current min */
   --radius:    12px;
   --radius-sm: 8px;
   --shadow:    0 8px 30px rgba(0,0,0,.38);
@@ -272,7 +273,8 @@ input[type="number"] { width: 70px; }
 .bar.is-compare  { background: var(--warn); }
 .bar.is-swap     { background: var(--danger); }
 .bar.is-sorted   { background: var(--good); }
-.bar.is-pivot    { background: var(--accent-2); }
+.bar.is-pivot    { background: var(--focus); }
+.bar.is-min      { background: var(--focus); }
 .bar.is-cursor   { background: #c084fc; }
 .bar.is-active   { background: #c084fc; }
 
@@ -300,6 +302,7 @@ input[type="number"] { width: 70px; }
   color: var(--text-dim);
 }
 .cell.is-active   { background: var(--warn); color: #0b0e1a; border-color: var(--warn); }
+.cell.bit-hi      { outline: 2px solid var(--focus); outline-offset: -2px; }
 .cell.is-hit      { background: var(--good); color: #0b0e1a; border-color: var(--good); }
 .cell.is-remove   { background: var(--danger); color: #0b0e1a; border-color: var(--danger); }
 .cell.is-new      { background: var(--accent); color: #0b0e1a; border-color: var(--accent); transform: translateY(-4px); }
@@ -519,6 +522,12 @@ input[type="range"]::-moz-range-thumb { width: 14px; height: 14px; border-radius
 .related__chip:hover { border-color: var(--accent); text-decoration: none; }
 .related__chip--unseen { border-style: dashed; }
 .related__chip--unseen::before { content: '○ '; color: var(--accent-2); }
+.related__why { font-size: 13px; margin-top: 2px; }
+.related__why summary { cursor: pointer; color: var(--text-dim); font-size: 12px; }
+.related__why summary:hover { color: var(--accent); }
+.related__why ul { margin: 8px 0 0; padding-left: 18px; }
+.related__why li { margin-bottom: 4px; color: var(--text-dim); }
+.related__why li b { color: var(--text); font-weight: 600; }
 
 .cat__title--btn { cursor: pointer; display: flex; align-items: center; gap: 6px; border-radius: var(--radius-sm); }
 .cat__title--btn:hover { color: var(--text); background: var(--panel); }

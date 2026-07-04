@@ -328,10 +328,27 @@ async function run() {
     related: !!document.querySelector('.related'),
     headerGloss: document.querySelectorAll('.main__header .gloss').length
   }));
-  assert(nav.crumbs, 'breadcrumbs missing on viz page');
-  assert(nav.pager >= 1, 'pager missing on viz page');
-  assert(nav.related, 'related (built from / used by) panel missing on lru-cache');
-  assert(nav.headerGloss >= 1, 'viz description has no glossary links');
+  assert(nav.crumbs, 'breadcrumbs missing on demo page');
+  assert(nav.pager >= 1, 'pager missing on demo page');
+  assert(nav.related, 'related (built on / leads to) panel missing on lru-cache');
+  assert(nav.headerGloss >= 1, 'demo description has no glossary links');
+
+  // Relations come from the FULL graph: insertion sort has only a conceptual
+  // edge (PREREQS → bubble sort), which must still produce a "built on" panel
+  // with a readable rationale.
+  await page.goto(INDEX_URL + '#/sort-insertion');
+  await page.waitForTimeout(200);
+  const rel = await page.evaluate(() => ({
+    builtOn: [...document.querySelectorAll('.related__group')].map((g) => g.textContent).join(' | '),
+    whyItems: document.querySelectorAll('.related__why li').length,
+    everyIngredientHasWhy: window.Registry.all()
+      .filter((d) => d.category !== 'Lessons' && d.category !== 'Reference')
+      .every((d) => window.Ascent.ingredientsOf(d.id).every((r) => r.why && r.why.length > 5))
+  }));
+  assert(/built on/.test(rel.builtOn) && /Bubble Sort/.test(rel.builtOn),
+    `insertion sort missing conceptual "built on" chip (got: ${rel.builtOn})`);
+  assert(rel.whyItems >= 1, 'insertion sort has no "why these ingredients" rationale list');
+  assert(rel.everyIngredientHasWhy, 'some edge is missing a readable rationale');
   console.log((glossProblems.length ? 'Glossary: FAILED' : 'Glossary: definitions verified, linkify OK, page + strips + pager + crumbs present ✓'));
   console.log('');
 

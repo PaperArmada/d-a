@@ -21,9 +21,22 @@
     container.appendChild(controls);
     container.appendChild(status);
     container.appendChild(stage);
+    // Pseudocode panel (same look as the frame-based demos); each operation
+    // lights up its own line so the button ↔ code mapping is explicit.
+    let codeLines = [];
+    if (opts.pseudocode) {
+      const pre = el('div.code-panel', { 'aria-label': 'pseudocode' });
+      codeLines = opts.pseudocode.map(function (line, i) {
+        const ln = el('div.code-line', [el('span.code-gutter', String(i + 1)), el('span.code-text', line || ' ')]);
+        pre.appendChild(ln);
+        return ln;
+      });
+      container.appendChild(pre);
+    }
+    function hiLine(i) { codeLines.forEach((ln, k) => ln.classList.toggle('active', k === i)); }
     if (opts.legend) container.appendChild(el('div.legend', opts.legend.map((l) =>
       el('span', [el('span.swatch', { style: { background: l.color } }), l.label]))));
-    return { input, status, stage, setStatus: (h) => { status.innerHTML = h; } };
+    return { input, status, stage, hiLine, setStatus: (h) => { status.innerHTML = h; } };
   }
 
   // ---------- Stack ----------
@@ -55,23 +68,30 @@
         align: 'flex-end',
         buttons: [
           { label: '⬆ Push', primary: true, onClick: function (v) {
-            if (v === '') return; stack.push(v); render(true, 'push'); ui.setStatus('push(<b>' + v + '</b>) — size ' + stack.length);
+            if (v === '') return; stack.push(v); render(true, 'push'); ui.hiLine(0);
+            ui.setStatus('push(<b>' + v + '</b>) — one write at the top, no matter how tall the stack: O(1)');
             ui.input.value = String(Util.randInt(1, 99));
           } },
           { label: '⬇ Pop', onClick: function () {
-            if (!stack.length) { ui.setStatus('pop() on empty stack → underflow'); return; }
-            render(true, 'pop'); const v = stack[stack.length - 1];
-            ui.setStatus('pop() → <b>' + v + '</b>');
+            if (!stack.length) { ui.hiLine(3); ui.setStatus('pop() on empty stack → underflow'); return; }
+            render(true, 'pop'); const v = stack[stack.length - 1]; ui.hiLine(1);
+            ui.setStatus('pop() → <b>' + v + '</b> — always the most recent push (LIFO)');
             setTimeout(function () { stack.pop(); render(); }, 350);
           } },
           { label: '👁 Peek', onClick: function () {
-            if (!stack.length) { ui.setStatus('peek() on empty stack'); return; }
-            render(true, 'peek'); ui.setStatus('peek() → <b>' + stack[stack.length - 1] + '</b> (not removed)');
+            if (!stack.length) { ui.hiLine(3); ui.setStatus('peek() on empty stack'); return; }
+            render(true, 'peek'); ui.hiLine(2); ui.setStatus('peek() → <b>' + stack[stack.length - 1] + '</b> (looked at, not removed)');
             setTimeout(render, 700);
           } }
         ],
         onClear: function () { stack = []; render(); ui.setStatus('cleared'); },
         share: function () { return { id: 'stack', params: { vals: stack.join(',') } }; },
+        pseudocode: [
+          'push(v):  a[top] = v; top = top + 1        # O(1)',
+          'pop():    top = top - 1; return a[top]     # O(1)',
+          'peek():   return a[top - 1]                # O(1)',
+          'empty():  top == 0'
+        ],
         legend: [{ color: 'var(--accent)', label: 'Pushed' }, { color: 'var(--danger)', label: 'Popped' }, { color: 'var(--warn)', label: 'Peek' }]
       });
       render();
@@ -110,23 +130,30 @@
       ui = buildShell(container, {
         buttons: [
           { label: '⬅ Enqueue', primary: true, onClick: function (v) {
-            if (v === '') return; queue.push(v); render('back'); ui.setStatus('enqueue(<b>' + v + '</b>) at back — size ' + queue.length);
+            if (v === '') return; queue.push(v); render('back'); ui.hiLine(0);
+            ui.setStatus('enqueue(<b>' + v + '</b>) at the back — everyone already in line keeps their place: O(1)');
             ui.input.value = String(Util.randInt(1, 99));
           } },
           { label: 'Dequeue ➡', onClick: function () {
-            if (!queue.length) { ui.setStatus('dequeue() on empty queue → underflow'); return; }
-            render('front', 'is-remove'); const v = queue[0];
-            ui.setStatus('dequeue() → <b>' + v + '</b> from front');
+            if (!queue.length) { ui.hiLine(3); ui.setStatus('dequeue() on empty queue → underflow'); return; }
+            render('front', 'is-remove'); const v = queue[0]; ui.hiLine(1);
+            ui.setStatus('dequeue() → <b>' + v + '</b> — always the one who has waited longest (FIFO)');
             setTimeout(function () { queue.shift(); render(); }, 350);
           } },
           { label: '👁 Front', onClick: function () {
-            if (!queue.length) { ui.setStatus('front() on empty queue'); return; }
-            render('front', 'is-active'); ui.setStatus('front() → <b>' + queue[0] + '</b> (not removed)');
+            if (!queue.length) { ui.hiLine(3); ui.setStatus('front() on empty queue'); return; }
+            render('front', 'is-active'); ui.hiLine(2); ui.setStatus('front() → <b>' + queue[0] + '</b> (looked at, not removed)');
             setTimeout(render, 700);
           } }
         ],
         onClear: function () { queue = []; render(); ui.setStatus('cleared'); },
         share: function () { return { id: 'queue', params: { vals: queue.join(',') } }; },
+        pseudocode: [
+          'enqueue(v):  a[back] = v; back = back + 1   # O(1)',
+          'dequeue():   v = a[front]; front = front + 1; return v   # O(1)',
+          'front():     return a[front]                # O(1)',
+          'empty():     front == back'
+        ],
         legend: [{ color: 'var(--accent)', label: 'Enqueued' }, { color: 'var(--danger)', label: 'Dequeued' }, { color: 'var(--warn)', label: 'Front' }]
       });
       render();

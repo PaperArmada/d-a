@@ -41,6 +41,15 @@ The test for each kind:
 - `PREREQS`: *would a learner hit a wall here without it?* → conceptual edge.
 - If both apply, declare `madeOf` only — don't duplicate the edge.
 
+### P1b — Explained edges
+Every edge — structural or conceptual — carries a **one-line plain-English
+rationale** in `EDGE_WHY` (`core/ascent.js`), keyed `'entry|ingredient'`.
+The rationale answers "why does this genuinely build on that?" in words a
+learner reads on the page (the "built on" panel and its *Why these
+ingredients?* list). If you can't write the line, the edge probably fails P1.
+`verify()` fails on any edge without a rationale **and** on any rationale
+without an edge, so the map can't rot in either direction.
+
 ### P2 — Direct edges only (minimality)
 Declare only **direct** ingredients; transitive ones are implied. If AVL
 depends on BST and BST depends on linked list, AVL must not also declare
@@ -86,7 +95,10 @@ and checks:
 4. the **chain is a valid topological order** (every ingredient strictly
    earlier — the invariant, checked directly on `Ascent.order()`);
 5. **minimality**: no conceptual prerequisite already implied by the entry's
-   other ingredients (P2).
+   other ingredients (P2), and no edge declared both in `madeOf` and
+   `PREREQS`;
+6. **explained edges**: every edge has a rationale in `EDGE_WHY`, and every
+   rationale corresponds to a real edge (P1b).
 
 A change that breaks any of these does not ship.
 
@@ -96,11 +108,14 @@ A change that breaks any of these does not ship.
    `madeOf` in its file.
 2. Ask the P1 conceptual question; if a learner would hit a wall, add the
    *direct* prerequisites to `PREREQS` in `core/ascent.js`.
-3. If it has **no** edges, you are claiming it's an element — justify that in
+3. Write a one-line rationale in `EDGE_WHY` for **every** edge you added
+   (P1b). If the line won't come, reconsider the edge.
+4. If it has **no** edges, you are claiming it's an element — justify that in
    review ("understandable from everyday experience alone").
-4. Run `npm test`. Fix anything `verify()` flags (cycle, redundancy, dangling
-   id) by changing **edges**, never by touching tier numbers or the sort.
-5. Look at where it lands on the Ascent page. If it feels too low, you forgot
+5. Run `npm test`. Fix anything `verify()` flags (cycle, redundancy, dangling
+   id, missing/stale rationale) by changing **edges**, never by touching tier
+   numbers or the sort.
+6. Look at where it lands on the Ascent page. If it feels too low, you forgot
    an edge; if too high, an edge is dishonest or redundant. Fix the edge.
 
 ## Renaming tiers

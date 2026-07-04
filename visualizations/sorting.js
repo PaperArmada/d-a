@@ -34,6 +34,7 @@
       bar.className = 'bar' +
         (sorted.has(i) ? ' is-sorted' : '') +
         (i === frame.pivot ? ' is-pivot' : '') +
+        (i === frame.min ? ' is-min' : '') +
         (i === frame.cursor ? ' is-cursor' : '') +
         (compare.has(i) ? ' is-compare' : '') +
         (swap.has(i) ? ' is-swap' : '');
@@ -91,11 +92,14 @@
         F.push(mk(0, { status: 'Start selection sort' }));
         for (let i = 0; i < n - 1; i++) {
           let min = i;
-          F.push(mk(1, { cursor: i, sorted: sorted.slice(), status: 'Find min from index ' + i }));
+          F.push(mk(1, { cursor: i, min: min, sorted: sorted.slice(), status: 'Find the minimum from index ' + i }));
           for (let j = i + 1; j < n; j++) {
             c.c++;
-            F.push(mk(3, { compare: [min, j], cursor: i, sorted: sorted.slice(), status: 'Is ' + a[j] + ' < min ' + a[min] + '?' }));
-            if (a[j] < a[min]) min = j;
+            F.push(mk(3, { compare: [j], min: min, cursor: i, sorted: sorted.slice(), status: 'Is ' + a[j] + ' < current min ' + a[min] + '?' }));
+            if (a[j] < a[min]) {
+              min = j;
+              F.push(mk(3, { min: min, cursor: i, sorted: sorted.slice(), status: 'New minimum: ' + a[min] }));
+            }
           }
           if (min !== i) { [a[i], a[min]] = [a[min], a[i]]; c.s++;
             F.push(mk(4, { swap: [i, min], sorted: sorted.slice(), status: 'Swap min into place' })); }
@@ -257,22 +261,26 @@
       blurb: 'Time ' + meta.time + ', space ' + meta.space + '.',
       longDesc: 'Watch ' + meta.name + ' rearrange a bar chart step by step, with the executing ' +
         'pseudocode line highlighted and live comparison / swap counts. ' +
-        'Yellow = comparing, red = swapping/writing, green = in final position.',
+        'Yellow = comparing, red = swapping/writing, green = in final position' +
+        (key === 'selection' ? ', violet = current minimum.' : key === 'quick' ? ', violet = pivot.' : '.'),
       create: function (container, params) {
         let data = (params && params.data) ? Util.parseList(params.data, null) : null;
         if (!data || data.length < 2) data = Util.randomArray(20, 8, 99);
+
+        const legend = [
+          { color: 'var(--accent)', label: 'Unsorted' },
+          { color: 'var(--warn)', label: 'Comparing' },
+          { color: 'var(--danger)', label: 'Swap / write' },
+          { color: 'var(--good)', label: 'Sorted' }
+        ];
+        if (key === 'selection') legend.splice(3, 0, { color: 'var(--focus)', label: 'Current minimum' });
+        if (key === 'quick') legend.splice(3, 0, { color: 'var(--focus)', label: 'Pivot' });
 
         const api = window.Scaffold.createStepViz(container, {
           render: renderBars,
           pseudocode: meta.pseudocode,
           counters: ['Comparisons', 'Swaps'],
-          legend: [
-            { color: 'var(--accent)', label: 'Unsorted' },
-            { color: 'var(--warn)', label: 'Comparing' },
-            { color: 'var(--danger)', label: 'Swap / write' },
-            { color: 'var(--accent-2)', label: 'Pivot' },
-            { color: 'var(--good)', label: 'Sorted' }
-          ],
+          legend: legend,
           complexity: { Time: meta.time, Best: meta.best, Space: meta.space, Stable: meta.stable },
           controls: [
             { label: '🎲 Random', onClick: function () { data = Util.randomArray(data.length, 8, 99); load(); } },

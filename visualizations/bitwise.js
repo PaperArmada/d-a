@@ -33,10 +33,12 @@
         row.appendChild(el('span.mono.dim', { style: { minWidth: '64px', textAlign: 'right', paddingRight: '6px' } }, label));
         for (let i = 7; i >= 0; i--) {
           const on = (val >> i) & 1;
-          row.appendChild(el('div.cell' + (on ? (hiCols ? '.is-hit' : '.is-active') : ''), {
+          const cell = el('div.cell' + (on ? (hiCols ? '.is-hit' : '.is-active') : ''), {
             style: { minWidth: '38px', height: '38px', cursor: clickable ? 'pointer' : 'default' },
             onclick: clickable ? function () { onFlip(i); } : null
-          }, String(on)));
+          }, String(on));
+          cell.dataset.col = String(i);
+          row.appendChild(cell);
         }
         row.appendChild(el('span.mono.dim', { style: { paddingLeft: '8px', fontSize: '12px' } }, '= ' + val));
         return row;
@@ -50,7 +52,23 @@
         else stage.appendChild(el('div.mono.dim', { style: { margin: '4px 0 6px 70px' } }, 'A ' + op + ' 1'));
         stage.appendChild(el('div', { style: { borderTop: '2px solid var(--border)', margin: '4px 0 8px', width: '460px' } }));
         stage.appendChild(bitRow(OPS[op].name, res, false, null, true));
-        stage.appendChild(el('p.hint', OPS[op].use + '.'));
+        stage.appendChild(el('p.hint', OPS[op].use + '. Hover any column to see its own little calculation — ' +
+          'columns never talk to each other, which is why the whole byte finishes in one cycle.'));
+
+        // Column hover: light up one column across all rows and narrate its math.
+        stage.querySelectorAll('[data-col]').forEach(function (cell) {
+          cell.addEventListener('mouseenter', function () {
+            const i = +cell.dataset.col;
+            stage.querySelectorAll('[data-col="' + i + '"]').forEach((c) => c.classList.add('bit-hi'));
+            const av = (A >> i) & 1, bv = (B >> i) & 1, rv = (res >> i) & 1;
+            setStatus(unary()
+              ? 'Column ' + i + ' (value ' + (1 << i) + '): this bit ' + (op === '<<' ? 'moves left to column ' + (i + 1) : 'moves right to column ' + (i - 1)) + '.'
+              : 'Column ' + i + ' (value ' + (1 << i) + '): ' + av + ' ' + op + ' ' + bv + ' = <b>' + rv + '</b> — computed without looking at any other column.');
+          });
+          cell.addEventListener('mouseleave', function () {
+            stage.querySelectorAll('.bit-hi').forEach((c) => c.classList.remove('bit-hi'));
+          });
+        });
       }
 
       const sel = el('select');
@@ -63,7 +81,16 @@
         el('button.btn', { onclick: function () {
           op = '&'; sel.value = '&'; B = 0b00001111; render();
           setStatus('The classic mask 0x0F: AND keeps only the low nibble of A. This is how you unpack fields from packed bytes.');
-        } }, '🎭 Mask low nibble'),
+        } }, '🎭 Mask'),
+        el('button.btn', { onclick: function () {
+          op = '|'; sel.value = '|'; B = 0b00000100; render();
+          setStatus('OR with 00000100 turns bit 2 on and touches nothing else — how you set one flag in a byte of flags.');
+        } }, '🚩 Set a flag'),
+        el('button.btn', { onclick: function () {
+          op = '&'; sel.value = '&'; A = 0b00000011; B = 0b00000010; render();
+          setStatus('A real permission check: perms = READ|WRITE (…011), test WRITE (…010). ' +
+            'perms & W ≠ 0 → allowed. One AND replaces a whole if-chain — this is how file permissions work.');
+        } }, '🔐 Can write?'),
         el('button.btn', { onclick: function () {
           op = '^'; sel.value = '^'; B = A; render();
           setStatus('x ^ x = 0 — XOR with itself always zeroes. (And x ^ y ^ y = x: reversible, the heart of many tricks.)');
