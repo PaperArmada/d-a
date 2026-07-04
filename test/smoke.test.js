@@ -128,7 +128,7 @@ async function run() {
     const id = location.hash.replace(/^#\//, '');
     btn.click();
     const cleared = !JSON.parse(localStorage.getItem('sf-visited') || '[]').includes(id) &&
-      btn.textContent.indexOf('not visited') >= 0 &&
+      /not visited/i.test(btn.textContent) && /mark/i.test(btn.textContent) &&
       !document.querySelector('.cat .nav-item.active .nav-item__tick');
     btn.click();
     const restored = JSON.parse(localStorage.getItem('sf-visited') || '[]').includes(id);

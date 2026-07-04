@@ -200,13 +200,20 @@
             const ds = depsOf(d);
             let tick = null;
             if (seen.has(d.id)) {
+              // Glyph comes from CSS (✓ at rest, ✕ on hover/focus) so the
+              // mark visibly reads as removable.
               tick = el('span.ascent-card__tick', {
-                role: 'button', tabindex: '0', title: 'Visited — click to clear the mark'
-              }, '✓');
-              tick.addEventListener('click', function (ev) {
+                role: 'button', tabindex: '0',
+                title: 'Visited — click to clear the mark', 'aria-label': 'Visited — clear the mark'
+              });
+              const clearMark = function (ev) {
                 ev.preventDefault(); ev.stopPropagation();
                 setVisited(d.id, false);
                 draw();
+              };
+              tick.addEventListener('click', clearMark);
+              tick.addEventListener('keydown', function (ev) {
+                if (ev.key === 'Enter' || ev.key === ' ') clearMark(ev);
               });
             }
             return el('a.ascent-card' + (seen.has(d.id) ? '.visited' : ''), { href: '#/' + d.id }, [

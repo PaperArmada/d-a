@@ -73,8 +73,10 @@
     if (/(?:^|[?&])embed=1(?:&|$)/.test(location.search)) return;
 
     let open = false;
+    // Compact, low-key launcher: icon-only circle that stays translucent
+    // until hovered/focused (or while the panel is open).
     const badge = el('span.fab__count');
-    const fab = el('button.fab', { 'aria-label': 'Leave feedback', 'aria-expanded': 'false' }, ['💬 Feedback', badge]);
+    const fab = el('button.fab', { 'aria-label': 'Leave feedback', title: 'Leave feedback', 'aria-expanded': 'false' }, ['💬', badge]);
     const where = el('span.fb-panel__page');
     const ta = el('textarea.fb-panel__text', {
       rows: '4', placeholder: 'What worked, what confused you, what’s missing…'

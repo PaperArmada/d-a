@@ -538,25 +538,35 @@ input[type="range"]::-moz-range-thumb { width: 14px; height: 14px; border-radius
 
 /* ---- Visited toggle (page header) ---- */
 .visit-toggle {
+  display: inline-flex; align-items: center; gap: 6px;
   margin-left: auto; padding: 3px 10px; border-radius: 999px; cursor: pointer;
   border: 1px dashed var(--border); background: transparent; color: var(--text-dim);
   font: inherit; font-size: 11.5px; transition: border-color .15s var(--ease), color .15s var(--ease);
 }
 .visit-toggle:hover { border-color: var(--accent); color: var(--text); }
 .visit-toggle.on { border-style: solid; border-color: var(--accent-2); color: var(--accent-2); }
+.visit-toggle__action { color: var(--text-dim); text-decoration: underline dotted; text-underline-offset: 3px; }
+.visit-toggle__action::before { content: '· '; text-decoration: none; }
+.visit-toggle:hover .visit-toggle__action { color: var(--accent); }
 
 /* ---- Feedback widget + inbox ---- */
 .fb-root { position: fixed; right: 18px; bottom: 18px; z-index: 70; display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
 .fab {
-  display: flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 999px; cursor: pointer;
+  position: relative; display: flex; align-items: center; justify-content: center;
+  width: 40px; height: 40px; padding: 0; border-radius: 50%; cursor: pointer;
   border: 1px solid var(--border); background: var(--panel); color: var(--text);
-  font: inherit; font-size: 13px; font-weight: 600; box-shadow: var(--shadow);
-  transition: border-color .15s var(--ease), transform .1s var(--ease);
+  font: inherit; font-size: 16px; box-shadow: var(--shadow);
+  opacity: .5;
+  transition: opacity .15s var(--ease), border-color .15s var(--ease), transform .1s var(--ease);
 }
-.fab:hover { border-color: var(--accent); transform: translateY(-1px); }
+.fab:hover, .fab:focus-visible, .fab[aria-expanded="true"] {
+  opacity: 1; border-color: var(--accent); transform: translateY(-1px);
+}
 .fab__count {
-  background: color-mix(in srgb, var(--accent) 25%, transparent); color: var(--accent);
-  border-radius: 999px; padding: 1px 7px; font-family: var(--mono, monospace); font-size: 10.5px;
+  position: absolute; top: -5px; right: -5px;
+  background: var(--accent); color: var(--bg);
+  border-radius: 999px; padding: 0 5px; min-width: 15px; line-height: 15px;
+  font-family: var(--mono, monospace); font-size: 9.5px; font-weight: 700;
 }
 .fb-panel {
   display: none; width: min(320px, calc(100vw - 36px)); padding: 14px 16px;
@@ -581,7 +591,7 @@ input[type="range"]::-moz-range-thumb { width: 14px; height: 14px; border-radius
 .fb-panel__foot { text-align: right; margin-top: 8px; }
 .fb-panel__inbox { font-size: 11.5px; color: var(--text-dim); }
 .fb-panel__inbox:hover { color: var(--text); }
-@media (max-width: 760px) { .fb-root { right: 12px; bottom: 12px; } .fab { padding: 9px 13px; } }
+@media (max-width: 760px) { .fb-root { right: 12px; bottom: 12px; } .fab { width: 36px; height: 36px; font-size: 14px; } }
 
 .fb-inbox { max-width: 860px; }
 .fb-inbox__notice {
@@ -681,7 +691,20 @@ body.embed .fb-root { display: none; }
 .ascent-card:hover { border-color: var(--accent); text-decoration: none; transform: translateY(-2px); }
 .ascent-card.visited { border-color: color-mix(in srgb, var(--good) 45%, var(--border)); }
 .ascent-card__top { display: flex; justify-content: space-between; align-items: baseline; }
-.ascent-card__tick { color: var(--good); font-weight: 800; }
+/* Visited mark: ✓ at rest, ✕ on hover/focus — it's a clearable control. */
+.ascent-card__tick {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 20px; height: 20px; border-radius: 50%; cursor: pointer;
+  color: var(--good); font-weight: 800; border: 1px solid transparent;
+  transition: color .12s var(--ease), border-color .12s var(--ease), background .12s var(--ease);
+}
+.ascent-card__tick::before { content: '✓'; }
+.ascent-card__tick:hover, .ascent-card__tick:focus-visible {
+  color: var(--bad, #f87171);
+  border-color: color-mix(in srgb, var(--bad, #f87171) 45%, transparent);
+  background: color-mix(in srgb, var(--bad, #f87171) 10%, transparent);
+}
+.ascent-card__tick:hover::before, .ascent-card__tick:focus-visible::before { content: '✕'; }
 .ascent-card__title { font-weight: 650; font-size: 14px; margin: 3px 0 5px; }
 .ascent-card__deps { font-size: 11px; color: var(--accent-2); line-height: 1.45; }
 .ascent-card__deps--elem { color: var(--text-dim); font-style: italic; }

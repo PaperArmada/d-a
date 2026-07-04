@@ -333,10 +333,15 @@
     } catch (e) {}
     // …but the mark is the user's to keep or clear ("I only skimmed this").
     if (def.category !== 'Reference' && global.Ascent) {
-      const btn = el('button.visit-toggle');
+      // State + explicit action ("✓ Visited · clear") so the chip reads as a
+      // control, not just a status.
+      const state = el('span.visit-toggle__state');
+      const action = el('span.visit-toggle__action');
+      const btn = el('button.visit-toggle', [state, action]);
       const paint = function () {
         const on = global.Ascent.visitedSet().has(id);
-        btn.textContent = on ? '✓ visited' : '○ not visited';
+        state.textContent = on ? '✓ Visited' : '○ Not visited';
+        action.textContent = on ? 'clear' : 'mark';
         btn.title = on ? 'Counted toward your climb — click to clear the mark' : 'Click to mark as visited';
         btn.classList.toggle('on', on);
       };
